@@ -1,10 +1,10 @@
-import './App.css';
+import { Container } from '@mui/material';
 
 function App() {
   return (
-    <div className="App">
+    <Container maxWidth="xl">
       <p>TODO</p>
-    </div>
+    </Container>
   );
 }
 
