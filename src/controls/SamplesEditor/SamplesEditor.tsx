@@ -4,6 +4,8 @@ import ControlContainer from 'components/ControlContainer';
 import Peaks, { PeaksInstance, PeaksOptions, Segment } from 'peaks.js';
 import { useEffect, useRef, useState } from 'react';
 import { AudioSource, AudioSourceSample } from 'types/AudioSource';
+import { calculateAudioBufferFrequency } from 'utils/frequencyUtils';
+import { clipSample } from 'utils/sampleUtils';
 import { v4 as uuidv4 } from 'uuid';
 import LoadingPlaceholder from './LoadingPlaceholder';
 import SamplesList from './SamplesList';
@@ -44,16 +46,29 @@ function SamplesEditor(props: IProps) {
     labelText,
     startTime,
     endTime,
-  }: Segment): AudioSourceSample => ({
-    id: id!,
-    name: labelText!,
-    startTime,
-    duration: endTime - startTime,
-  });
+  }: Segment): AudioSourceSample | undefined => {
+    try {
+      const sample = clipSample(audioSource.audioBuffer, startTime, endTime);
+      return {
+        id: id!,
+        name: labelText!,
+        startTime,
+        duration: endTime - startTime,
+        audioBuffer: sample,
+        frequency: calculateAudioBufferFrequency(sample),
+      };
+    } catch (error) {
+      console.error('Could not create sample:', error);
+      return undefined;
+    }
+  };
 
   const handleSegmentAdded = (segment: Segment) => {
     setAudioSource((prevAudioSource) => {
       const nextSample = createAudioSourceSample(segment);
+      if (!nextSample) {
+        return prevAudioSource;
+      }
       const nextSamples = [...prevAudioSource.samples, nextSample];
       return { ...prevAudioSource, samples: nextSamples };
     });
@@ -62,6 +77,9 @@ function SamplesEditor(props: IProps) {
   const handleSegmentUpdated = (segment: Segment) => {
     setAudioSource((prevAudioSource) => {
       const nextSample = createAudioSourceSample(segment);
+      if (!nextSample) {
+        return prevAudioSource;
+      }
       const nextSamples = prevAudioSource.samples.slice();
       const index = nextSamples.findIndex(({ id }) => id === nextSample.id);
       if (index < 0) {
