@@ -1,10 +1,12 @@
 import { Button, FormControl, FormHelperText, Link, Typography } from '@mui/material';
 import Modal2 from 'components/Modal2';
 import { ChangeEvent, useState } from 'react';
-import { Track } from 'types/Track';
+import { DrumTrack, InstrumentTrack, Track, TrackType } from 'types/Track';
 import { SongsterrData } from 'utils/trackFiles/Songsterr/SongsterrData';
 import {
+  convertSongsterrDataToDrumBeats,
   convertSongsterrDataToNotes,
+  getTrackType,
   isValidSongsterrData,
 } from 'utils/trackFiles/Songsterr/songsterrUtils';
 import { v4 as uuidv4 } from 'uuid';
@@ -41,12 +43,31 @@ function TrackFilesInput(props: IProps) {
           }
 
           const songsterrData = JSON.parse(text) as SongsterrData;
-          onTrackAdded({
+          const trackType = getTrackType(songsterrData);
+
+          const track: Track = {
             id: uuidv4(),
             name: songsterrData.name,
             instrument: songsterrData.instrument,
-            notes: convertSongsterrDataToNotes(songsterrData),
-          });
+            type: trackType,
+          };
+
+          switch (trackType) {
+            case TrackType.Drum: {
+              (track as DrumTrack).drumBeats = convertSongsterrDataToDrumBeats(songsterrData);
+              break;
+            }
+            case TrackType.Instrument: {
+              (track as InstrumentTrack).notes = convertSongsterrDataToNotes(songsterrData);
+              break;
+            }
+            default: {
+              const exhaustiveCheck: never = trackType;
+              throw new Error(`Unknown TrackType: ${trackType}.`);
+            }
+          }
+
+          onTrackAdded(track);
         });
       }
     }

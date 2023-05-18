@@ -1,7 +1,12 @@
+import { DRUM_KITS } from 'data/DRUM_KITS';
+import { DrumBeat } from 'types/DrumBeat';
+import { DrumType } from 'types/DrumType';
+import { Note } from 'types/Note';
 import { Sample } from 'types/Sample';
 import { Track } from 'types/Track';
 import { distinct, isArrayNotEmpty } from './arrayUtils';
-import { stretchAudioBuffer } from './sampleUtils';
+import { clipSampleByFrames, stretchAudioBuffer } from './sampleUtils';
+import { isDrumTrack, isInstrumentTrack } from './trackUtils';
 
 enum PlayMode {
   NoTracksLoaded,
@@ -12,10 +17,10 @@ enum PlayMode {
 
 class MultiTrackPlayer {
   /**
-   * This should be enough time to allow all notes in the interval to be queued,
+   * This should be enough time to allow all notes / drum beats in the interval to be queued,
    * but also small enough to respond quickly when pausing or stopping the playback.
    */
-  private static readonly SCHEDULE_NOTES_INTERVAL_DURATION = 0.2;
+  private static readonly SCHEDULE_NEXT_INTERVAL_DURATION = 0.2;
 
   private playMode = PlayMode.NoTracksLoaded;
 
@@ -30,17 +35,17 @@ class MultiTrackPlayer {
   private trackTime = 0;
 
   /**
-   * Track time of next interval of notes to be scheduled.
+   * Track time of next interval of notes / drum beats to be scheduled.
    */
   private scheduleTrackTime = 0;
 
   /**
-   * Max time it takes to schedule an interval of notes, useful for preventing drift.
+   * Max time it takes to schedule an interval of notes / drum beats, useful for preventing drift.
    */
-  private scheduleNotesLeadTime = 0;
+  private scheduleNextLeadTime = 0;
 
   /**
-   * All the playable tracks, ie each has a sample selected.
+   * All the playable tracks, ie each has a drum kit or sample selected.
    */
   private tracks: Array<Track> | undefined;
 
@@ -50,9 +55,14 @@ class MultiTrackPlayer {
   private sampleStretchedBuffers = new Map<string, Map<number, AudioBuffer>>();
 
   /**
-   * `timeoutId` of the next execution of `scheduleNotes()`
+   * Mapping of `drumKitId` => `drum` => `AudioBuffer`.
    */
-  private scheduleNotesTimeoutId: NodeJS.Timer | undefined;
+  private drumKitBuffers = new Map<number, Map<DrumType, AudioBuffer>>();
+
+  /**
+   * `timeoutId` of the next execution of `scheduleNext()`
+   */
+  private scheduleNextTimeoutId: NodeJS.Timer | undefined;
 
   constructor(private audioContext: AudioContext) {}
 
@@ -74,6 +84,30 @@ class MultiTrackPlayer {
     }
   }
 
+  private loadDrumKit(drumKitId: number) {
+    if (!this.drumKitBuffers.has(drumKitId)) {
+      const drumBuffers = new Map<number, AudioBuffer>();
+      this.drumKitBuffers.set(drumKitId, drumBuffers);
+
+      const drumKit = DRUM_KITS.find(({ id }) => id === drumKitId)!;
+      const { url, samples } = drumKit;
+
+      fetch(url)
+        .then((data) => data.arrayBuffer())
+        .then((arrayBuffer) => this.audioContext.decodeAudioData(arrayBuffer))
+        .then((decodedAudioData) => {
+          let startFrame = 0;
+          samples.forEach((sample) => {
+            const buffer = clipSampleByFrames(decodedAudioData, startFrame, sample.numberOfFrames);
+            sample.drumTypes.forEach((drum) => {
+              drumBuffers.set(drum, buffer);
+            });
+            startFrame += sample.numberOfFrames;
+          });
+        });
+    }
+  }
+
   private loadSamples(notesWaves: Array<number>, sample: Sample) {
     if (!this.sampleStretchedBuffers.has(sample.id)) {
       this.sampleStretchedBuffers.set(sample.id, new Map<number, AudioBuffer>());
@@ -91,12 +125,24 @@ class MultiTrackPlayer {
   }
 
   setTracks(tracks: Array<Track>) {
-    this.tracks = tracks.filter((track) => track.sample);
+    this.tracks = tracks.filter(
+      (track) =>
+        (isDrumTrack(track) && track.drumKitId !== undefined) ||
+        (isInstrumentTrack(track) && track.sample !== undefined),
+    );
 
-    this.tracks.forEach(({ notes, sample }) => {
-      if (sample) {
-        const notesWaves = notes.map((note) => note.waves).filter(distinct);
-        this.loadSamples(notesWaves, sample);
+    this.tracks.forEach((track) => {
+      if (isDrumTrack(track)) {
+        const { drumKitId } = track;
+        if (drumKitId) {
+          this.loadDrumKit(drumKitId);
+        }
+      } else if (isInstrumentTrack(track)) {
+        const { notes, sample } = track;
+        if (sample) {
+          const notesWaves = notes.map((note) => note.waves).filter(distinct);
+          this.loadSamples(notesWaves, sample);
+        }
       }
     });
 
@@ -105,8 +151,59 @@ class MultiTrackPlayer {
     }
   }
 
-  private scheduleNotes() {
-    const scheduleNotesStarted = this.audioContext.currentTime;
+  private scheduleDrumBeats(drumBeats: Array<DrumBeat>, drumKitId: number) {
+    drumBeats.forEach((drumBeat) => {
+      const drumBuffers = this.drumKitBuffers.get(drumKitId);
+      if (!drumBuffers) {
+        return;
+      }
+
+      const drumBuffer = drumBuffers.get(drumBeat.drum);
+      if (!drumBuffer) {
+        console.warn(`Missing sample for drum: ${DrumType[drumBeat.drum]}.`);
+        return;
+      }
+
+      const scheduleTime = this.playStartTime + drumBeat.startTime;
+      const bufferSource = new AudioBufferSourceNode(this.audioContext, { buffer: drumBuffer });
+      bufferSource.connect(this.audioContext.destination);
+      bufferSource.start(scheduleTime);
+    });
+  }
+
+  private scheduleNotes(notes: Array<Note>, sample: Sample) {
+    if (!sample) {
+      // Ignore tracks that don't have a sample selected
+      return;
+    }
+
+    const stretchedBuffers = this.sampleStretchedBuffers.get(sample.id);
+
+    if (!stretchedBuffers) {
+      // Might not be processed yet
+      return;
+    }
+
+    notes.forEach((note) => {
+      const stretchFactor = note.waves / sample.waves;
+      const stretchedBuffer = stretchedBuffers.get(stretchFactor);
+      if (!stretchedBuffer) {
+        // Might not be processed yet
+        return;
+      }
+
+      const scheduleTime = this.playStartTime + note.startTime;
+      const bufferSource = new AudioBufferSourceNode(this.audioContext, {
+        buffer: stretchedBuffer,
+        playbackRate: note.frequency / sample.frequency,
+      });
+      bufferSource.connect(this.audioContext.destination);
+      bufferSource.start(scheduleTime);
+    });
+  }
+
+  private scheduleNext() {
+    const scheduleNextStarted = this.audioContext.currentTime;
 
     if (!isArrayNotEmpty(this.tracks)) {
       // Throw error as this shouldn't be possible.
@@ -116,54 +213,41 @@ class MultiTrackPlayer {
     // Use this loop to keep `trackTime` in sync
     this.setTrackTime(this.audioContext.currentTime - this.playStartTime);
 
-    const endTime = this.scheduleTrackTime + MultiTrackPlayer.SCHEDULE_NOTES_INTERVAL_DURATION;
+    const endTime = this.scheduleTrackTime + MultiTrackPlayer.SCHEDULE_NEXT_INTERVAL_DURATION;
 
-    this.tracks.forEach(({ notes, sample }) => {
-      if (!sample) {
-        // Ignore tracks that don't have a sample selected
-        return;
+    this.tracks.forEach((track) => {
+      if (isDrumTrack(track)) {
+        const { drumBeats, drumKitId } = track;
+        if (drumKitId) {
+          const drumBeatsToSchedule = drumBeats.filter(
+            ({ startTime }) => startTime >= this.scheduleTrackTime && startTime < endTime,
+          );
+          this.scheduleDrumBeats(drumBeatsToSchedule, drumKitId);
+        }
+      } else if (isInstrumentTrack(track)) {
+        const { notes, sample } = track;
+        if (sample) {
+          const notesToSchedule = notes.filter(
+            ({ startTime }) => startTime >= this.scheduleTrackTime && startTime < endTime,
+          );
+          this.scheduleNotes(notesToSchedule, sample);
+        }
       }
-
-      const stretchedBuffers = this.sampleStretchedBuffers.get(sample.id);
-
-      if (!stretchedBuffers) {
-        // Might not be processed yet
-        return;
-      }
-
-      notes
-        .filter(({ startTime }) => startTime >= this.scheduleTrackTime && startTime < endTime)
-        .forEach((note) => {
-          const stretchFactor = note.waves / sample.waves;
-          const stretchedBuffer = stretchedBuffers.get(stretchFactor);
-          if (!stretchedBuffer) {
-            // Might not be processed yet
-            return;
-          }
-
-          const scheduleTime = this.playStartTime + note.startTime;
-          const bufferSource = new AudioBufferSourceNode(this.audioContext, {
-            buffer: stretchedBuffer,
-            playbackRate: note.frequency / sample.frequency,
-          });
-          bufferSource.connect(this.audioContext.destination);
-          bufferSource.start(scheduleTime);
-        });
     });
 
     // Check how long schedule function is taking, in case we need to reduce timeout delay
-    const leadTime = this.audioContext.currentTime - scheduleNotesStarted;
-    if (leadTime > 0 && leadTime > this.scheduleNotesLeadTime) {
-      this.scheduleNotesLeadTime = leadTime;
-      console.info('Schedule notes lead time increased:', this.scheduleNotesLeadTime);
+    const leadTime = this.audioContext.currentTime - scheduleNextStarted;
+    if (leadTime > 0 && leadTime > this.scheduleNextLeadTime) {
+      this.scheduleNextLeadTime = leadTime;
+      console.info('ScheduleNext lead time increased:', this.scheduleNextLeadTime);
     }
 
     if (this.playMode === PlayMode.Playing) {
       // Set next schedule's track time to the current end time
       this.scheduleTrackTime = endTime;
       // Now we delay until just before the track time will become the next schedule's track time
-      const delay = this.scheduleTrackTime - this.trackTime - this.scheduleNotesLeadTime;
-      this.scheduleNotesTimeoutId = setTimeout(this.scheduleNotes.bind(this), delay * 1000);
+      const delay = this.scheduleTrackTime - this.trackTime - this.scheduleNextLeadTime;
+      this.scheduleNextTimeoutId = setTimeout(this.scheduleNext.bind(this), delay * 1000);
     }
   }
 
@@ -178,12 +262,12 @@ class MultiTrackPlayer {
 
     this.setPlayMode(PlayMode.Playing);
 
-    this.scheduleNotes();
+    this.scheduleNext();
   }
 
   private stopPlaying(nextPlayMode: PlayMode) {
-    if (this.scheduleNotesTimeoutId) {
-      clearTimeout(this.scheduleNotesTimeoutId);
+    if (this.scheduleNextTimeoutId) {
+      clearTimeout(this.scheduleNextTimeoutId);
     }
 
     this.setPlayMode(nextPlayMode);
@@ -196,7 +280,7 @@ class MultiTrackPlayer {
   stop() {
     this.stopPlaying(PlayMode.Stopped);
 
-    // Also reset track time and note scheduler
+    // Also reset track time and scheduler
     this.setTrackTime(0);
     this.scheduleTrackTime = 0;
   }

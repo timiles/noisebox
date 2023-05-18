@@ -5,7 +5,7 @@ import Peaks, { PeaksInstance, PeaksOptions, Segment } from 'peaks.js';
 import { useEffect, useRef, useState } from 'react';
 import { AudioSource, AudioSourceSample } from 'types/AudioSource';
 import { calculateAudioBufferFrequency } from 'utils/frequencyUtils';
-import { clipSample } from 'utils/sampleUtils';
+import { clipSampleByTime } from 'utils/sampleUtils';
 import { v4 as uuidv4 } from 'uuid';
 import LoadingPlaceholder from './LoadingPlaceholder';
 import SamplesList from './SamplesList';
@@ -48,7 +48,7 @@ function SamplesEditor(props: IProps) {
     endTime,
   }: Segment): AudioSourceSample | undefined => {
     try {
-      const sample = clipSample(audioSource.audioBuffer, startTime, endTime);
+      const sample = clipSampleByTime(audioSource.audioBuffer, startTime, endTime);
       return {
         id: id!,
         name: labelText!,

@@ -25,7 +25,7 @@ module.exports = {
   },
   overrides: [
     {
-      files: ['src/utils/**/*.ts'],
+      files: ['src/data/**/*.ts', 'src/types/**/*.ts', 'src/utils/**/*.ts'],
       rules: {
         'import/prefer-default-export': 'off',
       },

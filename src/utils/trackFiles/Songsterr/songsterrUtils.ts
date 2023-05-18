@@ -1,4 +1,8 @@
+import { DrumBeat } from 'types/DrumBeat';
+import { DrumType } from 'types/DrumType';
 import { Note } from 'types/Note';
+import { TrackType } from 'types/Track';
+import { isDefined } from 'utils/arrayUtils';
 import { getFrequencyFromMidiNote } from 'utils/frequencyUtils';
 import { SongsterrData } from './SongsterrData';
 
@@ -11,8 +15,19 @@ export function isValidSongsterrData(json: Object): boolean {
   );
 }
 
-export function convertSongsterrDataToNotes(songsterrData: SongsterrData): Array<Note> {
-  const notes = new Array<Note>();
+export function getTrackType(songsterrData: SongsterrData): TrackType {
+  return songsterrData.instrumentId === 1024 ? TrackType.Drum : TrackType.Instrument;
+}
+
+type SongsterrNote = {
+  string: number;
+  fret: number;
+  startTime: number;
+  duration: number;
+};
+
+function flattenSongsterrNotes(songsterrData: SongsterrData): Array<SongsterrNote> {
+  const notes = new Array<SongsterrNote>();
 
   for (let voice = 0; voice < songsterrData.voices; voice += 1) {
     let currentWholeBeatsPerMeasure = 0;
@@ -54,16 +69,14 @@ export function convertSongsterrDataToNotes(songsterrData: SongsterrData): Array
             if (note.fret == null) {
               throw new Error('fret not set');
             }
+
             if (note.tie) {
               const previousNote = notes[notes.length - 1];
               previousNote.duration += duration;
-              previousNote.waves = previousNote.frequency * previousNote.duration;
             } else {
-              // Might not have tuning eg drum track
-              const stringNote = songsterrData.tuning ? songsterrData.tuning[note.string] : 0;
-              const frequency = getFrequencyFromMidiNote(stringNote + note.fret);
+              const { string, fret } = note;
               const startTime = timeAtStartOfMeasure + timeAtStartOfBeat;
-              notes.push({ startTime, frequency, duration, waves: frequency * duration });
+              notes.push({ string, fret, startTime, duration });
             }
           });
         }
@@ -76,4 +89,61 @@ export function convertSongsterrDataToNotes(songsterrData: SongsterrData): Array
   }
 
   return notes;
+}
+
+const fretsToDrumsMap = new Map<number, DrumType>([
+  [33, DrumType.Snare],
+  [35, DrumType.Bass2],
+  [36, DrumType.Bass1],
+  [38, DrumType.Snare],
+  [40, DrumType.Snare],
+  [41, DrumType.FloorTom1],
+  [42, DrumType.ClosedHiHat],
+  [43, DrumType.FloorTom2],
+  [44, DrumType.FootHiHat],
+  [45, DrumType.FloorTom1],
+  [46, DrumType.OpenHiHat],
+  [47, DrumType.Tom3],
+  [48, DrumType.Tom2],
+  [49, DrumType.Crash],
+  [50, DrumType.Tom1],
+  [55, DrumType.Crash],
+  [57, DrumType.Crash],
+  [92, DrumType.LooseHiHat],
+]);
+
+export function convertSongsterrDataToDrumBeats(songsterrData: SongsterrData): Array<DrumBeat> {
+  const unknownDrumFrets = new Map<number, number>();
+
+  const drumBeats = flattenSongsterrNotes(songsterrData)
+    .map(({ fret, startTime }) => {
+      const drum = fretsToDrumsMap.get(fret);
+      if (drum === undefined) {
+        unknownDrumFrets.set(fret, (unknownDrumFrets.get(fret) ?? 0) + 1);
+        return null;
+      }
+      return { startTime, drum };
+    })
+    .filter(isDefined);
+
+  if (unknownDrumFrets.size > 0) {
+    const unknownDrumFretsCounts = Array.from(unknownDrumFrets).map(
+      ([fret, count]) => `${fret} (x${count})`,
+    );
+    console.warn(`Unknown drum frets: ${unknownDrumFretsCounts.join(', ')}.`);
+  }
+
+  return drumBeats;
+}
+
+export function convertSongsterrDataToNotes(songsterrData: SongsterrData): Array<Note> {
+  if (!songsterrData.tuning) {
+    throw new Error('Tuning data is required.');
+  }
+
+  return flattenSongsterrNotes(songsterrData).map(({ string, fret, startTime, duration }) => {
+    const stringNote = songsterrData.tuning![string];
+    const frequency = getFrequencyFromMidiNote(stringNote + fret);
+    return { startTime, frequency, duration, waves: frequency * duration };
+  });
 }

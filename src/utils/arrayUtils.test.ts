@@ -1,4 +1,4 @@
-import { distinct, isArrayNotEmpty } from './arrayUtils';
+import { distinct, isArrayNotEmpty, isDefined } from './arrayUtils';
 
 describe('arrayUtils', () => {
   describe('distinct', () => {
@@ -24,6 +24,20 @@ describe('arrayUtils', () => {
 
     it('returns true if array has items', () => {
       expect(isArrayNotEmpty([0])).toBe(true);
+    });
+  });
+
+  describe('isDefined', () => {
+    it('returns only defined number values', () => {
+      const array = [3, null, -1, undefined, 0];
+      const expected = [3, -1, 0];
+      expect(array.filter(isDefined)).toStrictEqual(expected);
+    });
+
+    it('returns only defined string values', () => {
+      const array = ['foo', null, 'bar', undefined, ''];
+      const expected = ['foo', 'bar', ''];
+      expect(array.filter(isDefined)).toStrictEqual(expected);
     });
   });
 });
