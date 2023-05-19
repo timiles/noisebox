@@ -12,6 +12,7 @@ export type Track = {
   name: string;
   instrument: string;
   type: TrackType;
+  mute: boolean;
 };
 
 export type DrumTrack = Track & {

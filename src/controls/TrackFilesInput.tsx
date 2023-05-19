@@ -50,6 +50,7 @@ function TrackFilesInput(props: IProps) {
             name: songsterrData.name,
             instrument: songsterrData.instrument,
             type: trackType,
+            mute: false,
           };
 
           switch (trackType) {

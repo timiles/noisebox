@@ -216,6 +216,10 @@ class MultiTrackPlayer {
     const endTime = this.scheduleTrackTime + MultiTrackPlayer.SCHEDULE_NEXT_INTERVAL_DURATION;
 
     this.tracks.forEach((track) => {
+      if (track.mute) {
+        return;
+      }
+
       if (isDrumTrack(track)) {
         const { drumBeats, drumKitId } = track;
         if (drumKitId) {
