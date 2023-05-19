@@ -11,7 +11,7 @@ export const DRUM_KITS: ReadonlyArray<DrumKit> = [
   {
     id: 1,
     name: 'Roland R-8',
-    url: '/sounds/drum-kits/roland-r8.wav',
+    url: './sounds/drum-kits/roland-r8.wav',
     samples: [
       {
         drumTypes: [DrumType.Bass1, DrumType.Bass2],
@@ -47,7 +47,7 @@ export const DRUM_KITS: ReadonlyArray<DrumKit> = [
   {
     id: 2,
     name: 'Acoustic kit',
-    url: '/sounds/drum-kits/acoustic-kit.wav',
+    url: './sounds/drum-kits/acoustic-kit.wav',
     samples: [
       {
         drumTypes: [DrumType.Bass1, DrumType.Bass2],
@@ -83,7 +83,7 @@ export const DRUM_KITS: ReadonlyArray<DrumKit> = [
   {
     id: 3,
     name: 'Stark',
-    url: '/sounds/drum-kits/stark.wav',
+    url: './sounds/drum-kits/stark.wav',
     samples: [
       {
         drumTypes: [DrumType.Bass1, DrumType.Bass2],
