@@ -1,6 +1,6 @@
 # Noisebox
 
-Noisebox is a playground for making mashups of sound.
+[Noisebox](https://timiles.github.io/noisebox/) is a playground for making mashups of sound.
 
 ## Units
 
