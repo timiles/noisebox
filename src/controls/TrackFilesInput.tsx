@@ -1,6 +1,15 @@
-import { Button, FormControl, FormHelperText, Link, Typography } from '@mui/material';
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  FormControl,
+  FormHelperText,
+  Link,
+} from '@mui/material';
 import ExternalLink from 'components/ExternalLink';
-import Modal2 from 'components/Modal2';
 import { ChangeEvent, useState } from 'react';
 import { DrumTrack, InstrumentTrack, Track, TrackType } from 'types/Track';
 import { SongsterrData } from 'utils/trackFiles/Songsterr/SongsterrData';
@@ -94,25 +103,29 @@ export default function TrackFilesInput(props: IProps) {
           supported track files
         </Link>
       </FormHelperText>
-      <Modal2
-        id="track-files-modal"
+      <Dialog
         open={open}
-        title="Supported track files"
-        closeText="Got it"
         onClose={handleClose}
+        aria-labelledby="track-files-dialog-title"
+        aria-describedby="track-files-dialog-description"
       >
-        <Typography mb={2}>
-          Noisebox can currently read tabs from{' '}
-          <ExternalLink href="https://www.songsterr.com/">Songsterr.com</ExternalLink>.
-        </Typography>
-        <Typography>
-          Please{' '}
-          <ExternalLink href="https://github.com/timiles/noisebox/issues">
-            open an issue
-          </ExternalLink>{' '}
-          to request support for other file formats.
-        </Typography>
-      </Modal2>
+        <DialogTitle id="track-files-dialog-title">Supported track files</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="track-files-dialog-description" tabIndex={-1}>
+            Noisebox can currently read tabs from{' '}
+            <ExternalLink href="https://www.songsterr.com/">Songsterr.com</ExternalLink>.
+            <br />
+            Please{' '}
+            <ExternalLink href="https://github.com/timiles/noisebox/issues">
+              open an issue
+            </ExternalLink>{' '}
+            to request support for other file formats.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>Got it</Button>
+        </DialogActions>
+      </Dialog>
     </FormControl>
   );
 }
