@@ -13,7 +13,7 @@ import { Track } from 'types/Track';
 import MultiTrackPlayer from 'utils/MultiTrackPlayer';
 import { getValidSamples } from 'utils/sampleUtils';
 
-function App() {
+export default function App() {
   const [audioSources, setAudioSources] = useState<AudioSource[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
 
@@ -78,5 +78,3 @@ function App() {
     </Container>
   );
 }
-
-export default App;

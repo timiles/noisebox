@@ -12,7 +12,7 @@ interface IProps {
   onChange: (track: Track) => void;
 }
 
-function TrackSettings(props: IProps) {
+export default function TrackSettings(props: IProps) {
   const { track, samples, onChange } = props;
 
   const handleChangeDrumKit = (nextDrumKitId: number) => {
@@ -44,5 +44,3 @@ function TrackSettings(props: IProps) {
     </ControlContainer>
   );
 }
-
-export default TrackSettings;

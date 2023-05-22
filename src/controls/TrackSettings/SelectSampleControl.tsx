@@ -15,7 +15,7 @@ interface IProps {
   onChange: (sample: Sample) => void;
 }
 
-function SelectSampleControl(props: IProps) {
+export default function SelectSampleControl(props: IProps) {
   const { id, samples, onChange } = props;
 
   const [selectedSampleId, setSelectedSampleId] = useState<string>('');
@@ -52,4 +52,3 @@ function SelectSampleControl(props: IProps) {
     </FormControl>
   );
 }
-export default SelectSampleControl;

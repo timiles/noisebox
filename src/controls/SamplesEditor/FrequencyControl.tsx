@@ -8,7 +8,7 @@ interface IProps {
   duration: number;
 }
 
-function FrequencyControl(props: IProps) {
+export default function FrequencyControl(props: IProps) {
   const { frequency, duration } = props;
 
   const audioContext = useAudioContext();
@@ -38,5 +38,3 @@ function FrequencyControl(props: IProps) {
     </Stack>
   );
 }
-
-export default FrequencyControl;

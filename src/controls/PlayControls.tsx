@@ -8,7 +8,7 @@ interface IProps {
   multiTrackPlayer: MultiTrackPlayer;
 }
 
-function PlayControls(props: IProps) {
+export default function PlayControls(props: IProps) {
   const { multiTrackPlayer } = props;
 
   const [trackTime, setTrackTime] = useState(0);
@@ -45,5 +45,3 @@ function PlayControls(props: IProps) {
     </ControlContainer>
   );
 }
-
-export default PlayControls;

@@ -8,7 +8,7 @@ interface IProps {
   onAudioSourceAdded: (audioSource: AudioSource) => void;
 }
 
-function AudioSourceFilesInput(props: IProps) {
+export default function AudioSourceFilesInput(props: IProps) {
   const { onAudioSourceAdded } = props;
 
   const audioContext = useAudioContext();
@@ -57,5 +57,3 @@ function AudioSourceFilesInput(props: IProps) {
     </FormControl>
   );
 }
-
-export default AudioSourceFilesInput;

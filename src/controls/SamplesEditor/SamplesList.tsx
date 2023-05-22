@@ -18,7 +18,7 @@ interface IProps {
   samples: AudioSourceSample[];
 }
 
-function SamplesList(props: IProps) {
+export default function SamplesList(props: IProps) {
   const { samples } = props;
 
   const audioContext = useAudioContext();
@@ -66,5 +66,3 @@ function SamplesList(props: IProps) {
     </TableContainer>
   );
 }
-
-export default SamplesList;

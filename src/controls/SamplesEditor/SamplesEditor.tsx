@@ -18,7 +18,7 @@ interface IProps {
 
 const ZOOM_LEVELS = [512, 1024, 2048, 4096];
 
-function SamplesEditor(props: IProps) {
+export default function SamplesEditor(props: IProps) {
   const { audioSource: initialAudioSource, onChange } = props;
 
   const audioContext = useAudioContext();
@@ -196,5 +196,3 @@ function SamplesEditor(props: IProps) {
     </ControlContainer>
   );
 }
-
-export default SamplesEditor;

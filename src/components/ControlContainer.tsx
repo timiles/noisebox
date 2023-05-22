@@ -1,7 +1,7 @@
 import { Box, Paper } from '@mui/material';
 import { PropsWithChildren } from 'react';
 
-function ControlContainer(props: PropsWithChildren<{}>) {
+export default function ControlContainer(props: PropsWithChildren<{}>) {
   const { children } = props;
 
   return (
@@ -12,5 +12,3 @@ function ControlContainer(props: PropsWithChildren<{}>) {
     </Box>
   );
 }
-
-export default ControlContainer;

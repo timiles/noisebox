@@ -7,7 +7,7 @@ interface IProps {
   onChange: (drumKitId: number) => void;
 }
 
-function SelectDrumKitControl(props: IProps) {
+export default function SelectDrumKitControl(props: IProps) {
   const { id, onChange } = props;
 
   const [selectedDrumKitId, setSelectedDrumKitId] = useState<number>();
@@ -38,4 +38,3 @@ function SelectDrumKitControl(props: IProps) {
     </FormControl>
   );
 }
-export default SelectDrumKitControl;

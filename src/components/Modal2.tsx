@@ -21,7 +21,7 @@ const style = {
   p: 4,
 };
 
-function Modal2(props: PropsWithChildren<IProps>) {
+export default function Modal2(props: PropsWithChildren<IProps>) {
   const { id, open, title, closeText, onClose, children } = props;
 
   const titleId = `${id}-title`;
@@ -59,5 +59,3 @@ function Modal2(props: PropsWithChildren<IProps>) {
     </Modal>
   );
 }
-
-export default Modal2;

@@ -15,7 +15,7 @@ interface IProps {
   onTrackAdded: (track: Track) => void;
 }
 
-function TrackFilesInput(props: IProps) {
+export default function TrackFilesInput(props: IProps) {
   const { onTrackAdded } = props;
 
   const [open, setOpen] = useState(false);
@@ -115,5 +115,3 @@ function TrackFilesInput(props: IProps) {
     </FormControl>
   );
 }
-
-export default TrackFilesInput;
