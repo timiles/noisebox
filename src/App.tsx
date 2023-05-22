@@ -1,8 +1,12 @@
-import { Stack } from '@mui/material';
+import { Box, Stack } from '@mui/material';
 import Container from '@mui/material/Container';
+import Toolbar from '@mui/material/Toolbar';
+import AppBar, { View } from 'AppBar';
 import { useAudioContext } from 'AudioContextProvider';
+import { useLogger } from 'LoggerProvider';
 import ControlContainer from 'components/ControlContainer';
 import AudioSourceFilesInput from 'controls/AudioSourceFilesInput';
+import LogsDisplay from 'controls/LogsDisplay';
 import PlayControls from 'controls/PlayControls';
 import SamplesEditor from 'controls/SamplesEditor';
 import TrackFilesInput from 'controls/TrackFilesInput';
@@ -14,11 +18,22 @@ import MultiTrackPlayer from 'utils/MultiTrackPlayer';
 import { getValidSamples } from 'utils/sampleUtils';
 
 export default function App() {
+  const [currentView, setCurrentView] = useState<View>('Noisebox');
   const [audioSources, setAudioSources] = useState<AudioSource[]>([]);
   const [tracks, setTracks] = useState<Track[]>([]);
 
   const audioContext = useAudioContext();
-  const [multiTrackPlayer] = useState(new MultiTrackPlayer(audioContext));
+  const logger = useLogger();
+
+  const [multiTrackPlayer] = useState(new MultiTrackPlayer(audioContext, logger));
+
+  const handleChangeView = (nextView: View) => {
+    setCurrentView(nextView);
+  };
+
+  const handleCloseLogs = () => {
+    setCurrentView('Noisebox');
+  };
 
   const handleAudioSourceAdded = (addedAudioSource: AudioSource) => {
     setAudioSources((prevAudioSources) => prevAudioSources.concat(addedAudioSource));
@@ -51,30 +66,35 @@ export default function App() {
 
   return (
     <Container maxWidth="xl">
-      <ControlContainer>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
-          <AudioSourceFilesInput onAudioSourceAdded={handleAudioSourceAdded} />
-          <TrackFilesInput onTrackAdded={handleTrackAdded} />
-        </Stack>
-      </ControlContainer>
-      {audioSources.length > 0 &&
-        audioSources.map((audioSource) => (
-          <SamplesEditor
-            key={audioSource.id}
-            audioSource={audioSource}
-            onChange={handleChangeAudioSource}
-          />
-        ))}
-      {tracks.length > 0 &&
-        tracks.map((track) => (
-          <TrackSettings
-            key={track.id}
-            track={track}
-            samples={samples}
-            onChange={handleChangeTrack}
-          />
-        ))}
-      <PlayControls multiTrackPlayer={multiTrackPlayer} />
+      <AppBar onChangeView={handleChangeView} />
+      {currentView === 'Logs' && <LogsDisplay onClose={handleCloseLogs} />}
+      <Box component="main" pt={2}>
+        <Toolbar />
+        <ControlContainer>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
+            <AudioSourceFilesInput onAudioSourceAdded={handleAudioSourceAdded} />
+            <TrackFilesInput onTrackAdded={handleTrackAdded} />
+          </Stack>
+        </ControlContainer>
+        {audioSources.length > 0 &&
+          audioSources.map((audioSource) => (
+            <SamplesEditor
+              key={audioSource.id}
+              audioSource={audioSource}
+              onChange={handleChangeAudioSource}
+            />
+          ))}
+        {tracks.length > 0 &&
+          tracks.map((track) => (
+            <TrackSettings
+              key={track.id}
+              track={track}
+              samples={samples}
+              onChange={handleChangeTrack}
+            />
+          ))}
+        <PlayControls multiTrackPlayer={multiTrackPlayer} />
+      </Box>
     </Container>
   );
 }

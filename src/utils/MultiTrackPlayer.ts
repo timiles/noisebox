@@ -1,3 +1,4 @@
+import { ILogger } from 'LoggerProvider';
 import { DRUM_KITS } from 'data/DRUM_KITS';
 import { DrumBeat } from 'types/DrumBeat';
 import { DrumType } from 'types/DrumType';
@@ -64,7 +65,7 @@ class MultiTrackPlayer {
    */
   private scheduleNextTimeoutId: NodeJS.Timer | undefined;
 
-  constructor(private audioContext: AudioContext) {}
+  constructor(private audioContext: AudioContext, private logger: ILogger) {}
 
   onChangePlayMode: ((playMode: PlayMode) => void) | undefined;
 
@@ -160,7 +161,7 @@ class MultiTrackPlayer {
 
       const drumBuffer = drumBuffers.get(drumBeat.drum);
       if (!drumBuffer) {
-        console.warn(`Missing sample for drum: ${DrumType[drumBeat.drum]}.`);
+        this.logger.log('warning', `Missing sample for drum: "${DrumType[drumBeat.drum]}".`);
         return;
       }
 
@@ -243,7 +244,7 @@ class MultiTrackPlayer {
     const leadTime = this.audioContext.currentTime - scheduleNextStarted;
     if (leadTime > 0 && leadTime > this.scheduleNextLeadTime) {
       this.scheduleNextLeadTime = leadTime;
-      console.info('ScheduleNext lead time increased:', this.scheduleNextLeadTime);
+      this.logger.log('info', `ScheduleNext lead time increased: ${this.scheduleNextLeadTime}`);
     }
 
     if (this.playMode === PlayMode.Playing) {
@@ -257,8 +258,7 @@ class MultiTrackPlayer {
 
   play() {
     if (!isArrayNotEmpty(this.tracks)) {
-      console.error('Please create a track with a sample.');
-      return;
+      throw new Error('No tracks can be played.');
     }
 
     // `trackTime` could be non-zero if playback was previously paused

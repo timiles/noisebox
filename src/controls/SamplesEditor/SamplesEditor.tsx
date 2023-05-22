@@ -1,5 +1,6 @@
 import { Box, Button, Paper, Stack, Typography } from '@mui/material';
 import { useAudioContext } from 'AudioContextProvider';
+import { useLogger } from 'LoggerProvider';
 import ControlContainer from 'components/ControlContainer';
 import Peaks, { PeaksInstance, PeaksOptions, Segment } from 'peaks.js';
 import { useEffect, useRef, useState } from 'react';
@@ -22,6 +23,7 @@ export default function SamplesEditor(props: IProps) {
   const { audioSource: initialAudioSource, onChange } = props;
 
   const audioContext = useAudioContext();
+  const { log } = useLogger();
 
   const [audioSource, setAudioSource] = useState(initialAudioSource);
   const [peaks, setPeaks] = useState<PeaksInstance>();
@@ -58,7 +60,7 @@ export default function SamplesEditor(props: IProps) {
         frequency: calculateAudioBufferFrequency(sample),
       };
     } catch (error) {
-      console.error('Could not create sample:', error);
+      log('error', `Error creating "${labelText ?? 'sample'}": ${error}`);
       return undefined;
     }
   };
@@ -102,8 +104,7 @@ export default function SamplesEditor(props: IProps) {
         },
         mediaElement: audioElementRef.current!,
         keyboard: true,
-        // eslint-disable-next-line no-console
-        logger: console.error.bind(console),
+        logger: (...args: any[]) => log('error', args.join(' | ')),
         createSegmentMarker: (o) => (o.view === 'zoomview' ? new ZoomviewSegmentMarker(o) : null),
         createSegmentLabel: () => null,
         webAudio: { audioContext },

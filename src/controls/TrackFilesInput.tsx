@@ -9,6 +9,7 @@ import {
   FormHelperText,
   Link,
 } from '@mui/material';
+import { useLogger } from 'LoggerProvider';
 import ExternalLink from 'components/ExternalLink';
 import { ChangeEvent, useState } from 'react';
 import { DrumTrack, InstrumentTrack, Track, TrackType } from 'types/Track';
@@ -28,6 +29,8 @@ interface IProps {
 export default function TrackFilesInput(props: IProps) {
   const { onTrackAdded } = props;
 
+  const logger = useLogger();
+
   const [open, setOpen] = useState(false);
 
   const handleOpen = () => setOpen(true);
@@ -42,13 +45,12 @@ export default function TrackFilesInput(props: IProps) {
           let json;
           try {
             json = JSON.parse(text);
-          } catch (error) {
-            console.error(`${file.name} is not valid json:`, error);
-            return;
-          }
 
-          if (!isValidSongsterrData(json)) {
-            console.error(`${file.name} is not valid Songsterr data.`);
+            if (!isValidSongsterrData(json)) {
+              throw new Error('Invalid Songsterr data.');
+            }
+          } catch (error) {
+            logger.log('error', `Could not read "${file.name}". ${error}`);
             return;
           }
 
@@ -65,7 +67,10 @@ export default function TrackFilesInput(props: IProps) {
 
           switch (trackType) {
             case TrackType.Drum: {
-              (track as DrumTrack).drumBeats = convertSongsterrDataToDrumBeats(songsterrData);
+              (track as DrumTrack).drumBeats = convertSongsterrDataToDrumBeats(
+                songsterrData,
+                logger,
+              );
               break;
             }
             case TrackType.Instrument: {

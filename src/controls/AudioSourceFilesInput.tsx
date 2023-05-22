@@ -1,5 +1,6 @@
 import { Button, FormControl, FormHelperText } from '@mui/material';
 import { useAudioContext } from 'AudioContextProvider';
+import { useLogger } from 'LoggerProvider';
 import { ChangeEvent } from 'react';
 import { AudioSource } from 'types/AudioSource';
 import { v4 as uuidv4 } from 'uuid';
@@ -12,28 +13,31 @@ export default function AudioSourceFilesInput(props: IProps) {
   const { onAudioSourceAdded } = props;
 
   const audioContext = useAudioContext();
+  const { log } = useLogger();
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { files } = e.currentTarget;
     if (files) {
       for (let i = 0; i < files.length; i += 1) {
         const file = files[i];
-        file.arrayBuffer().then((value) => {
+        file.arrayBuffer().then((arrayBuffer) => {
           // Create a copy of the raw data before it's consumed
-          const rawData = value.slice(0, value.byteLength);
-          audioContext.decodeAudioData(value, (audioBuffer) => {
-            if (!audioBuffer) {
-              console.error('Error decoding audio data. Please try another file.');
-            }
-            onAudioSourceAdded({
-              id: uuidv4(),
-              name: file.name,
-              rawData,
-              contentType: file.type,
-              audioBuffer,
-              samples: [],
+          const rawData = arrayBuffer.slice(0, arrayBuffer.byteLength);
+          audioContext
+            .decodeAudioData(arrayBuffer)
+            .then((decodedAudioData) => {
+              onAudioSourceAdded({
+                id: uuidv4(),
+                name: file.name,
+                rawData,
+                contentType: file.type,
+                audioBuffer: decodedAudioData,
+                samples: [],
+              });
+            })
+            .catch((reason) => {
+              log('error', `Error decoding "${file.name}": ${reason}`);
             });
-          });
         });
       }
     }

@@ -1,3 +1,4 @@
+import { ILogger } from 'LoggerProvider';
 import { DrumBeat } from 'types/DrumBeat';
 import { DrumType } from 'types/DrumType';
 import { Note } from 'types/Note';
@@ -112,7 +113,10 @@ const fretsToDrumsMap = new Map<number, DrumType>([
   [92, DrumType.LooseHiHat],
 ]);
 
-export function convertSongsterrDataToDrumBeats(songsterrData: SongsterrData): Array<DrumBeat> {
+export function convertSongsterrDataToDrumBeats(
+  songsterrData: SongsterrData,
+  logger: ILogger,
+): Array<DrumBeat> {
   const unknownDrumFrets = new Map<number, number>();
 
   const drumBeats = flattenSongsterrNotes(songsterrData)
@@ -130,7 +134,7 @@ export function convertSongsterrDataToDrumBeats(songsterrData: SongsterrData): A
     const unknownDrumFretsCounts = Array.from(unknownDrumFrets).map(
       ([fret, count]) => `${fret} (x${count})`,
     );
-    console.warn(`Unknown drum frets: ${unknownDrumFretsCounts.join(', ')}.`);
+    logger.log('warning', `Unknown drum frets: ${unknownDrumFretsCounts.join(', ')}.`);
   }
 
   return drumBeats;

@@ -4,6 +4,7 @@ import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 import { CssBaseline } from '@mui/material';
 import AudioContextProvider from 'AudioContextProvider';
+import LoggerProvider from 'LoggerProvider';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -14,9 +15,11 @@ const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
 root.render(
   <React.StrictMode>
     <CssBaseline />
-    <AudioContextProvider>
-      <App />
-    </AudioContextProvider>
+    <LoggerProvider>
+      <AudioContextProvider>
+        <App />
+      </AudioContextProvider>
+    </LoggerProvider>
   </React.StrictMode>,
 );
 

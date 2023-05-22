@@ -1,3 +1,4 @@
+import { useLogger } from 'LoggerProvider';
 import { PropsWithChildren, createContext, useContext, useState } from 'react';
 
 const AudioContextContext = createContext<AudioContext | undefined>(undefined);
@@ -17,14 +18,19 @@ const AudioContextProvider = ({ children }: PropsWithChildren<{}>) => {
  * Returns a global AudioContext.
  */
 const useAudioContext = () => {
+  const logger = useLogger();
   const audioContext = useContext(AudioContextContext);
+
   if (!audioContext) {
     throw new Error('useAudioContext must be used inside an AudioContextProvider.');
   }
-  // Check if suspended or not allowed to start.
-  if (audioContext.state === 'suspended') {
+
+  // AudioContext might be suspended if created before any user gesture on page
+  if (audioContext.state !== 'running') {
+    logger.log('info', `AudioContext state: ${audioContext.state}. Resuming now.`);
     audioContext.resume();
   }
+
   return audioContext;
 };
 
