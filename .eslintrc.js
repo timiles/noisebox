@@ -25,6 +25,12 @@ module.exports = {
   },
   overrides: [
     {
+      files: ['src/components/**/*.tsx'],
+      rules: {
+        'react/jsx-props-no-spreading': 'off',
+      },
+    },
+    {
       files: ['src/data/**/*.ts', 'src/types/**/*.ts', 'src/utils/**/*.ts'],
       rules: {
         'import/prefer-default-export': 'off',

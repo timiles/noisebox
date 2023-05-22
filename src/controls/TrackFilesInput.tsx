@@ -1,4 +1,5 @@
 import { Button, FormControl, FormHelperText, Link, Typography } from '@mui/material';
+import ExternalLink from 'components/ExternalLink';
 import Modal2 from 'components/Modal2';
 import { ChangeEvent, useState } from 'react';
 import { DrumTrack, InstrumentTrack, Track, TrackType } from 'types/Track';
@@ -102,14 +103,14 @@ export default function TrackFilesInput(props: IProps) {
       >
         <Typography mb={2}>
           Noisebox can currently read tabs from{' '}
-          <Link href="https://www.songsterr.com/" target="_blank" rel="noopener">
-            Songsterr.com
-          </Link>
-          .
+          <ExternalLink href="https://www.songsterr.com/">Songsterr.com</ExternalLink>.
         </Typography>
         <Typography>
-          Please <Link href="https://github.com/timiles/noisebox/issues">open an issue</Link> to
-          request support for other file formats.
+          Please{' '}
+          <ExternalLink href="https://github.com/timiles/noisebox/issues">
+            open an issue
+          </ExternalLink>{' '}
+          to request support for other file formats.
         </Typography>
       </Modal2>
     </FormControl>
