@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { useLogger } from 'LoggerProvider';
 import ExternalLink from 'components/ExternalLink';
+import { enqueueSnackbar } from 'notistack';
 import { ChangeEvent, useState } from 'react';
 import { DrumTrack, InstrumentTrack, Track, TrackType } from 'types/Track';
 import { SongsterrData } from 'utils/trackFiles/Songsterr/SongsterrData';
@@ -51,6 +52,7 @@ export default function TrackFilesInput(props: IProps) {
             }
           } catch (error) {
             logger.log('error', `Could not read "${file.name}". ${error}`);
+            enqueueSnackbar({ message: `Could not read "${file.name}".`, variant: 'error' });
             return;
           }
 

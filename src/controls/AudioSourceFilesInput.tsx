@@ -1,6 +1,7 @@
 import { Button, FormControl, FormHelperText } from '@mui/material';
 import { useAudioContext } from 'AudioContextProvider';
 import { useLogger } from 'LoggerProvider';
+import { enqueueSnackbar } from 'notistack';
 import { ChangeEvent } from 'react';
 import { AudioSource } from 'types/AudioSource';
 import { v4 as uuidv4 } from 'uuid';
@@ -37,6 +38,7 @@ export default function AudioSourceFilesInput(props: IProps) {
             })
             .catch((reason) => {
               log('error', `Error decoding "${file.name}": ${reason}`);
+              enqueueSnackbar({ message: `Error decoding "${file.name}".`, variant: 'error' });
             });
         });
       }

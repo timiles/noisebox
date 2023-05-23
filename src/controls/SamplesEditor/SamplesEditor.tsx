@@ -2,6 +2,7 @@ import { Box, Button, Paper, Stack, Typography } from '@mui/material';
 import { useAudioContext } from 'AudioContextProvider';
 import { useLogger } from 'LoggerProvider';
 import ControlContainer from 'components/ControlContainer';
+import { enqueueSnackbar } from 'notistack';
 import Peaks, { PeaksInstance, PeaksOptions, Segment } from 'peaks.js';
 import { useEffect, useRef, useState } from 'react';
 import { AudioSource, AudioSourceSample } from 'types/AudioSource';
@@ -61,6 +62,7 @@ export default function SamplesEditor(props: IProps) {
       };
     } catch (error) {
       log('error', `Error creating "${labelText ?? 'sample'}": ${error}`);
+      enqueueSnackbar({ message: `Error creating "${labelText ?? 'sample'}".`, variant: 'error' });
       return undefined;
     }
   };

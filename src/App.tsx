@@ -11,6 +11,7 @@ import PlayControls from 'controls/PlayControls';
 import SamplesEditor from 'controls/SamplesEditor';
 import TrackFilesInput from 'controls/TrackFilesInput';
 import TrackSettings from 'controls/TrackSettings';
+import { SnackbarProvider } from 'notistack';
 import { useState } from 'react';
 import { AudioSource } from 'types/AudioSource';
 import { Track } from 'types/Track';
@@ -95,6 +96,7 @@ export default function App() {
           ))}
         <PlayControls multiTrackPlayer={multiTrackPlayer} />
       </Box>
+      <SnackbarProvider />
     </Container>
   );
 }
