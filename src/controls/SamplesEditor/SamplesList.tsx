@@ -16,10 +16,11 @@ import FrequencyControl from './FrequencyControl';
 
 interface IProps {
   samples: AudioSourceSample[];
+  onChangeSampleFrequency: (sampleId: string, frequency: number | null) => void;
 }
 
 export default function SamplesList(props: IProps) {
-  const { samples } = props;
+  const { samples, onChangeSampleFrequency } = props;
 
   const audioContext = useAudioContext();
 
@@ -48,7 +49,13 @@ export default function SamplesList(props: IProps) {
                 </Tooltip>
               </TableCell>
               <TableCell>
-                <FrequencyControl frequency={frequency} duration={duration} />
+                <FrequencyControl
+                  sampleName={name}
+                  audioBuffer={audioBuffer}
+                  frequency={frequency}
+                  duration={duration}
+                  onChangeFrequency={(nextFrequency) => onChangeSampleFrequency(id, nextFrequency)}
+                />
               </TableCell>
               <TableCell>
                 <Button

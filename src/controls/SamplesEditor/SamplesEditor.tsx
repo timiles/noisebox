@@ -6,7 +6,6 @@ import { enqueueSnackbar } from 'notistack';
 import Peaks, { PeaksInstance, PeaksOptions, Segment } from 'peaks.js';
 import { useEffect, useRef, useState } from 'react';
 import { AudioSource, AudioSourceSample } from 'types/AudioSource';
-import { calculateAudioBufferFrequency } from 'utils/frequencyUtils';
 import { clipSampleByTime } from 'utils/sampleUtils';
 import { v4 as uuidv4 } from 'uuid';
 import LoadingPlaceholder from './LoadingPlaceholder';
@@ -58,7 +57,6 @@ export default function SamplesEditor(props: IProps) {
         startTime,
         duration: endTime - startTime,
         audioBuffer: sample,
-        frequency: calculateAudioBufferFrequency(sample),
       };
     } catch (error) {
       log('error', `Error creating "${labelText ?? 'sample'}": ${error}`);
@@ -154,6 +152,14 @@ export default function SamplesEditor(props: IProps) {
     }
   };
 
+  const handleChangeSampleFrequency = (sampleId: string, frequency: number | null) => {
+    setAudioSource((prevAudioSource) => {
+      const nextSamples = prevAudioSource.samples.slice();
+      nextSamples.find((sample) => sample.id === sampleId)!.frequency = frequency;
+      return { ...prevAudioSource, samples: nextSamples };
+    });
+  };
+
   return (
     <ControlContainer>
       <Typography component="h2" variant="h6" mb={1}>
@@ -195,7 +201,12 @@ export default function SamplesEditor(props: IProps) {
         </Stack>
       </Stack>
 
-      {audioSource.samples.length > 0 && <SamplesList samples={audioSource.samples} />}
+      {audioSource.samples.length > 0 && (
+        <SamplesList
+          samples={audioSource.samples}
+          onChangeSampleFrequency={handleChangeSampleFrequency}
+        />
+      )}
     </ControlContainer>
   );
 }

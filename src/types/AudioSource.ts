@@ -13,5 +13,5 @@ export type AudioSourceSample = {
   startTime: number;
   duration: number;
   audioBuffer: AudioBuffer;
-  frequency: number | null;
+  frequency?: number | null;
 };

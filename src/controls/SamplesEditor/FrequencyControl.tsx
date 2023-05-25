@@ -1,20 +1,59 @@
-import { Button, Stack, Tooltip } from '@mui/material';
+import { Button, CircularProgress, Stack, Tooltip } from '@mui/material';
 import { useAudioContext } from 'AudioContextProvider';
-import { getMidiNoteFromFrequency, getPitchFromMidiNote } from 'utils/frequencyUtils';
+import { useLogger } from 'LoggerProvider';
+import { enqueueSnackbar } from 'notistack';
+import { useEffect } from 'react';
+import {
+  calculateFrequency,
+  getMidiNoteFromFrequency,
+  getPitchFromMidiNote,
+} from 'utils/frequencyUtils';
 import { playFrequency } from 'utils/playUtils';
+import { getChannelDataArrays } from 'utils/sampleUtils';
+import WorkerPool from 'workerpool';
 
 interface IProps {
-  frequency: number | null;
+  sampleName: string;
+  audioBuffer: AudioBuffer;
+  frequency: undefined | null | number;
   duration: number;
+  onChangeFrequency: (frequency: number | null) => void;
 }
 
 export default function FrequencyControl(props: IProps) {
-  const { frequency, duration } = props;
+  const { sampleName, audioBuffer, frequency, duration, onChangeFrequency } = props;
 
   const audioContext = useAudioContext();
+  const { log } = useLogger();
 
-  if (!frequency) {
-    return <p>Unable to detect frequency.</p>;
+  useEffect(() => {
+    if (frequency === undefined) {
+      const channelDataArrays = getChannelDataArrays(audioBuffer);
+
+      const pool = WorkerPool.pool();
+      pool
+        .exec(calculateFrequency, [channelDataArrays, audioBuffer.sampleRate])
+        .then((nextFrequency) => {
+          onChangeFrequency(nextFrequency);
+        })
+        .catch((reason) => {
+          const message = `Unable to detect frequency for "${sampleName}".`;
+          log('error', `${message} ${reason}`);
+          enqueueSnackbar(message, { variant: 'error' });
+          onChangeFrequency(null);
+        })
+        .then(() => {
+          pool.terminate();
+        });
+    }
+  }, [frequency]);
+
+  if (frequency === undefined) {
+    return <CircularProgress size="1rem" />;
+  }
+
+  if (frequency === null) {
+    return <span>Unable to detect frequency.</span>;
   }
 
   const handlePlayFrequency = () => {

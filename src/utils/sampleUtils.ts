@@ -2,6 +2,10 @@ import Kali from '@descript/kali';
 import { AudioSource } from 'types/AudioSource';
 import { Sample } from 'types/Sample';
 
+export function getChannelDataArrays(audioBuffer: AudioBuffer): Array<Float32Array> {
+  return [...Array(audioBuffer.numberOfChannels)].map((_, i) => audioBuffer.getChannelData(i));
+}
+
 export function clipSampleByFrames(
   inputBuffer: AudioBuffer,
   startFrame: number,
@@ -13,11 +17,10 @@ export function clipSampleByFrames(
     sampleRate: inputBuffer.sampleRate,
   });
 
-  for (let channel = 0; channel < inputBuffer.numberOfChannels; channel += 1) {
-    const inputData = inputBuffer.getChannelData(channel);
-    const sampleData = inputData.slice(startFrame, startFrame + numberOfFrames);
+  getChannelDataArrays(inputBuffer).forEach((channelData, channel) => {
+    const sampleData = channelData.slice(startFrame, startFrame + numberOfFrames);
     sampleBuffer.getChannelData(channel).set(sampleData);
-  }
+  });
 
   return sampleBuffer;
 }
@@ -42,7 +45,7 @@ export function getValidSamples(audioSources: Array<AudioSource>): Array<Sample>
   audioSources.forEach((audioSource) => {
     validSamples.push(
       ...audioSource.samples
-        .filter((sample) => sample.frequency !== null && sample.frequency > 0)
+        .filter((sample) => sample.frequency != null && sample.frequency > 0)
         .map((sample) => ({
           id: sample.id,
           name: `${audioSource.name} > ${sample.name}`,
@@ -116,22 +119,19 @@ export function stretchAudioBuffer(
 
   const { numberOfChannels, sampleRate } = inputAudioBuffer;
 
-  const stretchedChannelDatas = new Array<Float32Array>(numberOfChannels);
-  for (let channel = 0; channel < numberOfChannels; channel += 1) {
-    const channelData = inputAudioBuffer.getChannelData(channel);
-    const stretchedData = stretchChannelData(channelData, sampleRate, stretchFactor);
-    stretchedChannelDatas[channel] = stretchedData;
-  }
+  const stretchedChannelDataArrays = getChannelDataArrays(inputAudioBuffer).map((channelData) =>
+    stretchChannelData(channelData, sampleRate, stretchFactor),
+  );
 
   const stretchedAudioBuffer = new AudioBuffer({
-    length: Math.max(...stretchedChannelDatas.map((data) => data.length)),
+    length: Math.max(...stretchedChannelDataArrays.map((data) => data.length)),
     numberOfChannels,
     sampleRate,
   });
 
-  for (let channel = 0; channel < numberOfChannels; channel += 1) {
-    stretchedAudioBuffer.getChannelData(channel).set(stretchedChannelDatas[channel]);
-  }
+  stretchedChannelDataArrays.forEach((channelData, channel) => {
+    stretchedAudioBuffer.getChannelData(channel).set(channelData);
+  });
 
   return stretchedAudioBuffer;
 }
