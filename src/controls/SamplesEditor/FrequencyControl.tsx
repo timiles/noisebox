@@ -12,6 +12,26 @@ import { playFrequency } from 'utils/playUtils';
 import { getChannelDataArrays } from 'utils/sampleUtils';
 import WorkerPool from 'workerpool';
 
+function FrequencyValue(props: { frequency: undefined | null | number }) {
+  const { frequency } = props;
+
+  if (frequency === undefined) {
+    return <CircularProgress size="1rem" />;
+  }
+
+  if (frequency === null) {
+    return <span>unable to detect</span>;
+  }
+
+  const midiNote = getMidiNoteFromFrequency(frequency);
+
+  return (
+    <Tooltip title={`${frequency} hertz, MIDI note: ${midiNote}`} placement="top" arrow>
+      <span>{`${frequency.toFixed(2)} Hz (${getPitchFromMidiNote(midiNote)})`}</span>
+    </Tooltip>
+  );
+}
+
 interface IProps {
   sampleName: string;
   audioBuffer: AudioBuffer;
@@ -48,30 +68,24 @@ export default function FrequencyControl(props: IProps) {
     }
   }, [frequency]);
 
-  if (frequency === undefined) {
-    return <CircularProgress size="1rem" />;
-  }
-
-  if (frequency === null) {
-    return <span>Unable to detect frequency.</span>;
-  }
-
   const handlePlayFrequency = () => {
-    playFrequency(audioContext, frequency, duration);
+    if (frequency) {
+      playFrequency(audioContext, frequency, duration);
+    }
   };
 
-  const midiNote = getMidiNoteFromFrequency(frequency);
-
   return (
-    <Stack
-      direction={{ xs: 'column', sm: 'row' }}
-      spacing={2}
-      alignItems={{ xs: 'flex-start', sm: 'center' }}
-    >
-      <Tooltip title={`${frequency} hertz, MIDI note: ${midiNote}`} placement="top" arrow>
-        <span>{`${frequency.toFixed(2)} Hz (${getPitchFromMidiNote(midiNote)})`}</span>
-      </Tooltip>
-      <Button variant="outlined" size="small" onClick={handlePlayFrequency}>
+    <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+      <Stack direction="row" spacing={1} alignItems="center">
+        <span>Frequency:</span>
+        <FrequencyValue frequency={frequency} />
+      </Stack>
+      <Button
+        variant="outlined"
+        size="small"
+        onClick={handlePlayFrequency}
+        disabled={frequency == null}
+      >
         Test
       </Button>
     </Stack>

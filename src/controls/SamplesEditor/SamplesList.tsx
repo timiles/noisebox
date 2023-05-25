@@ -1,15 +1,6 @@
-import {
-  Button,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Tooltip,
-} from '@mui/material';
+import { Button, Stack, Tooltip, Typography } from '@mui/material';
 import { useAudioContext } from 'AudioContextProvider';
+import ControlContainer from 'components/ControlContainer';
 import { AudioSourceSample } from 'types/AudioSource';
 import { playAudioBuffer } from 'utils/playUtils';
 import FrequencyControl from './FrequencyControl';
@@ -24,52 +15,41 @@ export default function SamplesList(props: IProps) {
 
   const audioContext = useAudioContext();
 
+  if (samples.length === 0) {
+    return null;
+  }
+
   const handlePlaySample = (audioBuffer: AudioBuffer) => {
     playAudioBuffer(audioContext, audioBuffer);
   };
 
   return (
-    <TableContainer component={Paper}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Name</TableCell>
-            <TableCell>Duration</TableCell>
-            <TableCell>Frequency</TableCell>
-            <TableCell>Actions</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {samples.map(({ id, name, duration, frequency, audioBuffer }) => (
-            <TableRow key={id}>
-              <TableCell>{name}</TableCell>
-              <TableCell>
-                <Tooltip title={`${duration} seconds`} placement="top" arrow>
-                  <span>{`${duration.toFixed(2)}s`}</span>
-                </Tooltip>
-              </TableCell>
-              <TableCell>
-                <FrequencyControl
-                  sampleName={name}
-                  audioBuffer={audioBuffer}
-                  frequency={frequency}
-                  duration={duration}
-                  onChangeFrequency={(nextFrequency) => onChangeSampleFrequency(id, nextFrequency)}
-                />
-              </TableCell>
-              <TableCell>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => handlePlaySample(audioBuffer)}
-                >
-                  Play sample
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+    <>
+      {samples.map(({ id, name, duration, frequency, audioBuffer }) => (
+        <ControlContainer key={id}>
+          <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+            <Typography component="h3" variant="h6">
+              {name}
+            </Typography>
+            <Button variant="outlined" size="small" onClick={() => handlePlaySample(audioBuffer)}>
+              Play
+            </Button>
+          </Stack>
+          <Typography>
+            Duration:{' '}
+            <Tooltip title={`${duration} seconds`} placement="top" arrow>
+              <span>{`${duration.toFixed(2)}s`}</span>
+            </Tooltip>
+          </Typography>
+          <FrequencyControl
+            sampleName={name}
+            audioBuffer={audioBuffer}
+            frequency={frequency}
+            duration={duration}
+            onChangeFrequency={(nextFrequency) => onChangeSampleFrequency(id, nextFrequency)}
+          />
+        </ControlContainer>
+      ))}
+    </>
   );
 }
