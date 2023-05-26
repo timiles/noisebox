@@ -6,7 +6,7 @@ import { enqueueSnackbar } from 'notistack';
 import Peaks, { PeaksInstance, PeaksOptions, Segment } from 'peaks.js';
 import { useEffect, useRef, useState } from 'react';
 import { AudioSource, AudioSourceSample } from 'types/AudioSource';
-import { clipSampleByTime } from 'utils/sampleUtils';
+import { clipSampleByTime, getClipsFromAudioBuffer } from 'utils/sampleUtils';
 import { v4 as uuidv4 } from 'uuid';
 import LoadingPlaceholder from './LoadingPlaceholder';
 import SamplesList from './SamplesList';
@@ -95,6 +95,8 @@ export default function SamplesEditor(props: IProps) {
     });
   };
 
+  const getDefaultSampleLabel = (sampleNumber: number) => `Sample ${sampleNumber}`;
+
   useEffect(() => {
     if (!peaks) {
       const options: PeaksOptions = {
@@ -116,6 +118,23 @@ export default function SamplesEditor(props: IProps) {
           nextPeaks.on('zoom.update', (currentZoomLevel) => handleZoomUpdated(currentZoomLevel));
           nextPeaks.on('segments.add', ([segment]) => handleSegmentAdded(segment));
           nextPeaks.on('segments.dragend', ({ segment }) => handleSegmentUpdated(segment));
+
+          const clips = getClipsFromAudioBuffer(audioSource.audioBuffer, {
+            minimumSilenceDuration: 0.005,
+            minimumClipDuration: 0.05,
+            maximumClipDuration: 2,
+          });
+
+          const { sampleRate } = audioSource.audioBuffer;
+          clips.forEach(({ start, length }, index) => {
+            nextPeaks.segments.add({
+              id: uuidv4(),
+              startTime: start / sampleRate,
+              endTime: (start + length) / sampleRate,
+              labelText: getDefaultSampleLabel(index + 1),
+              editable: true,
+            });
+          });
         }
         setPeaks(nextPeaks);
       });
@@ -146,7 +165,7 @@ export default function SamplesEditor(props: IProps) {
         id: uuidv4(),
         startTime: time,
         endTime: time + 0.5,
-        labelText: `Sample ${peaks.segments.getSegments().length}`,
+        labelText: getDefaultSampleLabel(peaks.segments.getSegments().length + 1),
         editable: true,
       });
     }

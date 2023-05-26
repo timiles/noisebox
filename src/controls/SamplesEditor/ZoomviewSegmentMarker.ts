@@ -77,7 +77,7 @@ class ZoomviewSegmentMarker implements SegmentMarker {
 
     const textHeight = this.text!.height() + 2 * this.text!.padding();
 
-    const offsetTop = 14;
+    const offsetTop = 14 + (this.options.startMarker ? 0 : 26);
     const offsetBottom = 26;
 
     this.group!.y(offsetTop + textHeight + 0.5);
