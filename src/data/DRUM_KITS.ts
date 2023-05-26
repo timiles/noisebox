@@ -4,7 +4,8 @@ type DrumKit = {
   id: number;
   name: string;
   url: string;
-  samples: Array<{ drumTypes: Array<DrumType>; numberOfFrames: number }>;
+  // These will be clipped out from the sound file in order
+  samples: Array<{ drumTypes: Array<DrumType> }>;
 };
 
 export const DRUM_KITS: ReadonlyArray<DrumKit> = [
@@ -15,23 +16,18 @@ export const DRUM_KITS: ReadonlyArray<DrumKit> = [
     samples: [
       {
         drumTypes: [DrumType.Bass1, DrumType.Bass2],
-        numberOfFrames: 24361,
       },
       {
         drumTypes: [DrumType.Tom1],
-        numberOfFrames: 12595,
       },
       {
         drumTypes: [DrumType.Tom2],
-        numberOfFrames: 16983,
       },
       {
         drumTypes: [DrumType.Tom3],
-        numberOfFrames: 22847,
       },
       {
         drumTypes: [DrumType.Snare],
-        numberOfFrames: 9473,
       },
       {
         drumTypes: [
@@ -40,7 +36,6 @@ export const DRUM_KITS: ReadonlyArray<DrumKit> = [
           DrumType.FootHiHat,
           DrumType.LooseHiHat,
         ],
-        numberOfFrames: 13481,
       },
     ],
   },
@@ -51,23 +46,18 @@ export const DRUM_KITS: ReadonlyArray<DrumKit> = [
     samples: [
       {
         drumTypes: [DrumType.Bass1, DrumType.Bass2],
-        numberOfFrames: 37275,
       },
       {
         drumTypes: [DrumType.Tom1],
-        numberOfFrames: 44241,
       },
       {
         drumTypes: [DrumType.Tom2],
-        numberOfFrames: 57495,
       },
       {
         drumTypes: [DrumType.Tom3],
-        numberOfFrames: 58548,
       },
       {
         drumTypes: [DrumType.Snare],
-        numberOfFrames: 33906,
       },
       {
         drumTypes: [
@@ -76,7 +66,6 @@ export const DRUM_KITS: ReadonlyArray<DrumKit> = [
           DrumType.FootHiHat,
           DrumType.LooseHiHat,
         ],
-        numberOfFrames: 20424,
       },
     ],
   },
@@ -87,23 +76,18 @@ export const DRUM_KITS: ReadonlyArray<DrumKit> = [
     samples: [
       {
         drumTypes: [DrumType.Bass1, DrumType.Bass2],
-        numberOfFrames: 4768,
       },
       {
         drumTypes: [DrumType.Tom1],
-        numberOfFrames: 56752,
       },
       {
         drumTypes: [DrumType.Tom2],
-        numberOfFrames: 57651,
       },
       {
         drumTypes: [DrumType.Tom3],
-        numberOfFrames: 54296,
       },
       {
         drumTypes: [DrumType.Snare],
-        numberOfFrames: 11168,
       },
       {
         drumTypes: [
@@ -112,7 +96,6 @@ export const DRUM_KITS: ReadonlyArray<DrumKit> = [
           DrumType.FootHiHat,
           DrumType.LooseHiHat,
         ],
-        numberOfFrames: 16233,
       },
     ],
   },

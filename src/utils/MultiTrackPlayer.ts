@@ -6,7 +6,7 @@ import { Note } from 'types/Note';
 import { Sample } from 'types/Sample';
 import { Track } from 'types/Track';
 import { distinct, isArrayNotEmpty } from './arrayUtils';
-import { clipSampleByFrames, stretchAudioBuffer } from './sampleUtils';
+import { clipSampleByFrames, getClipsFromAudioBuffer, stretchAudioBuffer } from './sampleUtils';
 import { isDrumTrack, isInstrumentTrack } from './trackUtils';
 
 enum PlayMode {
@@ -97,13 +97,26 @@ class MultiTrackPlayer {
         .then((data) => data.arrayBuffer())
         .then((arrayBuffer) => this.audioContext.decodeAudioData(arrayBuffer))
         .then((decodedAudioData) => {
-          let startFrame = 0;
-          samples.forEach((sample) => {
-            const buffer = clipSampleByFrames(decodedAudioData, startFrame, sample.numberOfFrames);
-            sample.drumTypes.forEach((drum) => {
-              drumBuffers.set(drum, buffer);
-            });
-            startFrame += sample.numberOfFrames;
+          const clips = getClipsFromAudioBuffer(decodedAudioData, {
+            minimumSilenceDuration: 0.005,
+            minimumClipDuration: 0.05,
+          });
+
+          if (samples.length !== clips.length) {
+            this.logger.log(
+              'warning',
+              `Drum kit "${drumKit.name}": expected ${samples.length} samples, found ${clips.length} clips.`,
+            );
+          }
+
+          clips.forEach((clip, index) => {
+            if (index < samples.length) {
+              const sample = samples[index];
+              const buffer = clipSampleByFrames(decodedAudioData, clip.start, clip.length);
+              sample.drumTypes.forEach((drum) => {
+                drumBuffers.set(drum, buffer);
+              });
+            }
           });
         });
     }

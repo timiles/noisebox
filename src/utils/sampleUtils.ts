@@ -6,6 +6,90 @@ export function getChannelDataArrays(audioBuffer: AudioBuffer): Array<Float32Arr
   return [...Array(audioBuffer.numberOfChannels)].map((_, i) => audioBuffer.getChannelData(i));
 }
 
+type Clip = { start: number; length: number };
+type GetClipsOptions = {
+  minimumSilenceDuration: number;
+  minimumClipDuration: number;
+  maximumClipDuration?: number;
+};
+
+export function getClips(
+  channelDataArrays: Array<Float32Array>,
+  sampleRate: number,
+  options: GetClipsOptions,
+): Array<Clip> {
+  const minimumSilenceLength = sampleRate * options.minimumSilenceDuration;
+  const minimumClipLength = sampleRate * options.minimumClipDuration;
+  const maximumClipLength = options.maximumClipDuration
+    ? sampleRate * options.maximumClipDuration
+    : undefined;
+
+  const isClipLongEnough = (clipLength: number) =>
+    clipLength >= minimumClipLength &&
+    (maximumClipLength === undefined || clipLength <= maximumClipLength);
+
+  const clips = new Array<Clip>();
+
+  let currentClipStart = 0;
+  let currentClipLength = 0;
+  let currentEmptyLength = 0;
+
+  // Silence is defined as a minimum number of empty frames
+  let isSilent = true;
+
+  const maxChannelDataLength = Math.max(...channelDataArrays.map((data) => data.length));
+  for (let dataIndex = 0; dataIndex < maxChannelDataLength; dataIndex += 1) {
+    const allChannelsEmpty = channelDataArrays.every(
+      (channelData) => channelData.length < dataIndex || Math.abs(channelData[dataIndex]) < 0.001,
+    );
+    if (allChannelsEmpty) {
+      currentEmptyLength += 1;
+
+      if (!isSilent) {
+        // Continue counting clip length until we find an actual silence
+        currentClipLength += 1;
+
+        if (currentEmptyLength >= minimumSilenceLength) {
+          isSilent = true;
+
+          // Found silence, so check if we can collect the current clip
+          const length = currentClipLength - currentEmptyLength;
+          if (isClipLongEnough(length)) {
+            clips.push({ start: currentClipStart, length });
+          }
+
+          currentClipLength = 0;
+        }
+      }
+    } else {
+      // Not an empty frame, so reset counter
+      currentEmptyLength = 0;
+      currentClipLength += 1;
+
+      if (isSilent) {
+        // If we had previously been silent, this is now the start of the next clip
+        currentClipStart = dataIndex;
+        isSilent = false;
+      }
+    }
+  }
+
+  // Collect final clip
+  const length = currentClipLength - currentEmptyLength;
+  if (isClipLongEnough(length)) {
+    clips.push({ start: currentClipStart, length });
+  }
+
+  return clips;
+}
+
+export function getClipsFromAudioBuffer(
+  audioBuffer: AudioBuffer,
+  options: GetClipsOptions,
+): Array<Clip> {
+  return getClips(getChannelDataArrays(audioBuffer), audioBuffer.sampleRate, options);
+}
+
 export function clipSampleByFrames(
   inputBuffer: AudioBuffer,
   startFrame: number,
