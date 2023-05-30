@@ -1,5 +1,6 @@
 import { ILogger } from 'LoggerProvider';
-import { DRUM_KITS } from 'data/DRUM_KITS';
+import { DRUM_KITS, DrumKit } from 'data/DRUM_KITS';
+import { enqueueSnackbar } from 'notistack';
 import { DrumBeat } from 'types/DrumBeat';
 import { DrumType } from 'types/DrumType';
 import { Note } from 'types/Note';
@@ -85,40 +86,66 @@ class MultiTrackPlayer {
     }
   }
 
+  private handleDrumKitLoaded(drumKit: DrumKit, audioBuffer: AudioBuffer) {
+    const { id, name, samples } = drumKit;
+
+    const clips = getClipsFromAudioBuffer(audioBuffer, {
+      minimumSilenceDuration: 0.005,
+      minimumClipDuration: 0.05,
+    });
+
+    if (samples.length !== clips.length) {
+      this.logger.log(
+        'warning',
+        `Drum kit "${name}": expected ${samples.length} samples, found ${clips.length} clips.`,
+      );
+    }
+
+    const drumBuffers = new Map<number, AudioBuffer>();
+    this.drumKitBuffers.set(id, drumBuffers);
+
+    clips.forEach((clip, index) => {
+      if (index < samples.length) {
+        const sample = samples[index];
+        const buffer = clipSampleByFrames(audioBuffer, clip.start, clip.length);
+        sample.drumTypes.forEach((drum) => {
+          drumBuffers.set(drum, buffer);
+        });
+      }
+    });
+  }
+
   private loadDrumKit(drumKitId: number) {
     if (!this.drumKitBuffers.has(drumKitId)) {
-      const drumBuffers = new Map<number, AudioBuffer>();
-      this.drumKitBuffers.set(drumKitId, drumBuffers);
-
       const drumKit = DRUM_KITS.find(({ id }) => id === drumKitId)!;
-      const { url, samples } = drumKit;
 
-      fetch(url)
-        .then((data) => data.arrayBuffer())
-        .then((arrayBuffer) => this.audioContext.decodeAudioData(arrayBuffer))
-        .then((decodedAudioData) => {
-          const clips = getClipsFromAudioBuffer(decodedAudioData, {
-            minimumSilenceDuration: 0.005,
-            minimumClipDuration: 0.05,
-          });
-
-          if (samples.length !== clips.length) {
-            this.logger.log(
-              'warning',
-              `Drum kit "${drumKit.name}": expected ${samples.length} samples, found ${clips.length} clips.`,
-            );
-          }
-
-          clips.forEach((clip, index) => {
-            if (index < samples.length) {
-              const sample = samples[index];
-              const buffer = clipSampleByFrames(decodedAudioData, clip.start, clip.length);
-              sample.drumTypes.forEach((drum) => {
-                drumBuffers.set(drum, buffer);
-              });
-            }
-          });
-        });
+      fetch(drumKit.url).then(
+        (response) => {
+          response
+            .arrayBuffer()
+            .then((arrayBuffer) => this.audioContext.decodeAudioData(arrayBuffer))
+            .then((decodedAudioData) => this.handleDrumKitLoaded(drumKit, decodedAudioData))
+            .catch((reason) => {
+              // Handle error from processing data
+              this.logger.log(
+                'error',
+                `Failed to load drum kit samples for "${drumKit.name}": ${reason}.`,
+              );
+              enqueueSnackbar('Failed to load drum kit.', { variant: 'error' });
+            });
+        },
+        (reason) => {
+          // Handle error from fetching data
+          this.logger.log(
+            'error',
+            `Failed to load drum kit samples for "${drumKit.name}": ${reason}.`,
+          );
+          enqueueSnackbar(
+            'Failed to load drum kit, please check your internet connection and try again.',
+            { variant: 'error' },
+          );
+        },
+      );
     }
   }
 

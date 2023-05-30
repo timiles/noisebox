@@ -1,6 +1,6 @@
 import { DrumType } from 'types/DrumType';
 
-type DrumKit = {
+export type DrumKit = {
   id: number;
   name: string;
   url: string;
