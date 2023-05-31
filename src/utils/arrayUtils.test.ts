@@ -1,4 +1,4 @@
-import { distinct, isArrayNotEmpty, isDefined } from './arrayUtils';
+import { distinct, getMaxItemNumber, isArrayNotEmpty, isDefined } from './arrayUtils';
 
 describe('arrayUtils', () => {
   describe('distinct', () => {
@@ -38,6 +38,33 @@ describe('arrayUtils', () => {
       const array = ['foo', null, 'bar', undefined, ''];
       const expected = ['foo', 'bar', ''];
       expect(array.filter(isDefined)).toStrictEqual(expected);
+    });
+  });
+
+  describe('getMaxItemNumber', () => {
+    it('returns max number as expected', () => {
+      const array = ['test1', 'test20', 'test3'];
+      expect(getMaxItemNumber('test', array)).toBe(20);
+    });
+
+    it('ignores non-numeric suffixes', () => {
+      const array = ['test1', 'test20x', 'test3'];
+      expect(getMaxItemNumber('test', array)).toBe(3);
+    });
+
+    it('ignores non-matching item names', () => {
+      const array = ['test1', 'xtest 20', 'test3'];
+      expect(getMaxItemNumber('test', array)).toBe(3);
+    });
+
+    it('returns null if no matching item names', () => {
+      const array = ['test1', 'test20', 'test3'];
+      expect(getMaxItemNumber('xtest', array)).toBeNull();
+    });
+
+    it('returns null if no numeric suffixes', () => {
+      const array = ['test1x', 'test20x', 'test3x'];
+      expect(getMaxItemNumber('test', array)).toBeNull();
     });
   });
 });

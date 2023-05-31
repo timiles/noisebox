@@ -7,6 +7,7 @@ import { useLogger } from 'LoggerProvider';
 import ControlContainer from 'components/ControlContainer';
 import AudioSourceFilesInput from 'controls/AudioSourceFilesInput';
 import LogsDisplay from 'controls/LogsDisplay';
+import MicrophoneRecorder from 'controls/MicrophoneRecorder';
 import PlayControls from 'controls/PlayControls';
 import SamplesEditor from 'controls/SamplesEditor';
 import TrackFilesInput from 'controls/TrackFilesInput';
@@ -74,6 +75,10 @@ export default function App() {
         <ControlContainer>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
             <AudioSourceFilesInput onAudioSourceAdded={handleAudioSourceAdded} />
+            <MicrophoneRecorder
+              audioSources={audioSources}
+              onAudioSourceAdded={handleAudioSourceAdded}
+            />
             <TrackFilesInput onTrackAdded={handleTrackAdded} />
           </Stack>
         </ControlContainer>

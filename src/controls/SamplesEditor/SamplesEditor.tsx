@@ -121,7 +121,7 @@ export default function SamplesEditor(props: IProps) {
 
           const clips = getClipsFromAudioBuffer(audioSource.audioBuffer, {
             minimumSilenceDuration: 0.005,
-            minimumClipDuration: 0.05,
+            minimumClipDuration: 0.25,
             maximumClipDuration: 2,
           });
 
