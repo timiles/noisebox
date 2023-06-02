@@ -1,7 +1,7 @@
 import { Button, Chip, Stack } from '@mui/material';
 import ControlContainer from 'components/ControlContainer';
+import MultiTrackPlayer, { PlayMode } from 'players/MultiTrackPlayer';
 import { useState } from 'react';
-import MultiTrackPlayer, { PlayMode } from 'utils/MultiTrackPlayer';
 import { toMinutesAndSeconds } from 'utils/timeUtils';
 
 interface IProps {

@@ -93,25 +93,21 @@ describe('songsterrUtils', () => {
           startTime: 0.5,
           frequency: 110,
           duration: 0.5,
-          waves: 55,
         },
         {
           startTime: 1.0,
           frequency: 220,
           duration: 1.25,
-          waves: 275,
         },
         {
           startTime: 2.25,
           frequency: 440,
           duration: 0.25,
-          waves: 110,
         },
         {
           startTime: 2.5,
           frequency: 220,
           duration: 1.5,
-          waves: 330,
         },
       ];
 
@@ -195,19 +191,16 @@ describe('songsterrUtils', () => {
           startTime: 0,
           frequency: 110,
           duration: 1.5,
-          waves: 165,
         },
         {
           startTime: 1.5,
           frequency: 110,
           duration: 3,
-          waves: 330,
         },
         {
           startTime: 4.5,
           frequency: 110,
           duration: 4,
-          waves: 440,
         },
       ];
 

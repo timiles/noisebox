@@ -3,8 +3,5 @@ export type Sample = {
   name: string;
   audioBuffer: AudioBuffer;
   frequency: number;
-  /**
-   * `waves` is `frequency * duration`.
-   */
-  waves: number;
+  duration: number;
 };

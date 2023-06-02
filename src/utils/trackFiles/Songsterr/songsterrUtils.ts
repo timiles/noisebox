@@ -148,6 +148,6 @@ export function convertSongsterrDataToNotes(songsterrData: SongsterrData): Array
   return flattenSongsterrNotes(songsterrData).map(({ string, fret, startTime, duration }) => {
     const stringNote = songsterrData.tuning![string];
     const frequency = getFrequencyFromMidiNote(stringNote + fret);
-    return { startTime, frequency, duration, waves: frequency * duration };
+    return { startTime, frequency, duration };
   });
 }

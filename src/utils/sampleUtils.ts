@@ -135,7 +135,7 @@ export function getValidSamples(audioSources: Array<AudioSource>): Array<Sample>
           name: `${audioSource.name} > ${sample.name}`,
           audioBuffer: sample.audioBuffer,
           frequency: sample.frequency!,
-          waves: sample.frequency! * sample.duration,
+          duration: sample.duration,
         })),
     );
   });

@@ -13,10 +13,12 @@ import SamplesEditor from 'controls/SamplesEditor';
 import TrackFilesInput from 'controls/TrackFilesInput';
 import TrackSettings from 'controls/TrackSettings';
 import { SnackbarProvider } from 'notistack';
+import DrumPlayer from 'players/DrumPlayer';
+import MultiTrackPlayer from 'players/MultiTrackPlayer';
+import SamplePlayer from 'players/SamplePlayer';
 import { useState } from 'react';
 import { AudioSource } from 'types/AudioSource';
 import { Track } from 'types/Track';
-import MultiTrackPlayer from 'utils/MultiTrackPlayer';
 import { getValidSamples } from 'utils/sampleUtils';
 
 export default function App() {
@@ -27,7 +29,14 @@ export default function App() {
   const audioContext = useAudioContext();
   const logger = useLogger();
 
-  const [multiTrackPlayer] = useState(new MultiTrackPlayer(audioContext, logger));
+  const [multiTrackPlayer] = useState(
+    new MultiTrackPlayer(
+      audioContext,
+      logger,
+      new DrumPlayer(audioContext, logger),
+      new SamplePlayer(audioContext, logger),
+    ),
+  );
 
   const handleChangeView = (nextView: View) => {
     setCurrentView(nextView);
