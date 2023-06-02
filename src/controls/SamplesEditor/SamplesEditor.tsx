@@ -9,7 +9,7 @@ import { AudioSource, AudioSourceSample } from 'types/AudioSource';
 import { clipSampleByTime, getClipsFromAudioBuffer } from 'utils/sampleUtils';
 import { v4 as uuidv4 } from 'uuid';
 import LoadingPlaceholder from './LoadingPlaceholder';
-import SamplesList from './SamplesList';
+import SampleControl from './SampleControl';
 import ZoomviewSegmentMarker from './ZoomviewSegmentMarker';
 
 interface IProps {
@@ -220,12 +220,13 @@ export default function SamplesEditor(props: IProps) {
         </Stack>
       </Stack>
 
-      {audioSource.samples.length > 0 && (
-        <SamplesList
-          samples={audioSource.samples}
+      {audioSource.samples.map((sample) => (
+        <SampleControl
+          key={sample.id}
+          sample={sample}
           onChangeSampleFrequency={handleChangeSampleFrequency}
         />
-      )}
+      ))}
     </ControlContainer>
   );
 }
