@@ -17,7 +17,8 @@ interface IProps {
   onChange: (audioSource: AudioSource) => void;
 }
 
-const ZOOM_LEVELS = [512, 1024, 2048, 4096];
+// Small sound files throw error on mobile when calling `resample`, so include zoom level 1
+const ZOOM_LEVELS = [1, 512, 1024, 2048, 4096];
 
 export default function SamplesEditor(props: IProps) {
   const { audioSource: initialAudioSource, onChange } = props;
@@ -27,7 +28,7 @@ export default function SamplesEditor(props: IProps) {
 
   const [audioSource, setAudioSource] = useState(initialAudioSource);
   const [peaks, setPeaks] = useState<PeaksInstance>();
-  const [canZoomIn, setCanZoomIn] = useState(false);
+  const [canZoomIn, setCanZoomIn] = useState(true);
   const [canZoomOut, setCanZoomOut] = useState(true);
 
   const zoomviewWaveformRef = useRef<HTMLDivElement>(null);
@@ -39,6 +40,7 @@ export default function SamplesEditor(props: IProps) {
   );
 
   const handleZoomUpdated = (nextZoomLevel: number) => {
+    log('info', `zoom level: ${nextZoomLevel}`);
     setCanZoomIn(nextZoomLevel !== ZOOM_LEVELS[0]);
     setCanZoomOut(nextZoomLevel !== ZOOM_LEVELS[ZOOM_LEVELS.length - 1]);
   };
@@ -118,6 +120,9 @@ export default function SamplesEditor(props: IProps) {
           nextPeaks.on('zoom.update', (currentZoomLevel) => handleZoomUpdated(currentZoomLevel));
           nextPeaks.on('segments.add', ([segment]) => handleSegmentAdded(segment));
           nextPeaks.on('segments.dragend', ({ segment }) => handleSegmentUpdated(segment));
+
+          // Start at ZOOM_LEVELS[1]
+          nextPeaks.zoom.zoomOut();
 
           const clips = getClipsFromAudioBuffer(audioSource.audioBuffer, {
             minimumSilenceDuration: 0.005,
