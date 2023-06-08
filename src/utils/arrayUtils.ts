@@ -6,7 +6,10 @@ export function isArrayNotEmpty<T>(array: Array<T> | null | undefined): array is
   return Array.isArray(array) && array.length > 0;
 }
 
-export function isDefined<TValue>(value: TValue | null | undefined): value is TValue {
+/**
+ * Typeguard to filter out null or undefined values.
+ */
+export function isNotNullish<TValue>(value: TValue | null | undefined): value is TValue {
   return value !== null && value !== undefined;
 }
 

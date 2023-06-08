@@ -1,4 +1,4 @@
-import { distinct, getMaxItemNumber, isArrayNotEmpty, isDefined } from './arrayUtils';
+import { distinct, getMaxItemNumber, isArrayNotEmpty, isNotNullish } from './arrayUtils';
 
 describe('arrayUtils', () => {
   describe('distinct', () => {
@@ -27,17 +27,17 @@ describe('arrayUtils', () => {
     });
   });
 
-  describe('isDefined', () => {
-    it('returns only defined number values', () => {
+  describe('isNotNullish', () => {
+    it('returns only non-nullish number values', () => {
       const array = [3, null, -1, undefined, 0];
       const expected = [3, -1, 0];
-      expect(array.filter(isDefined)).toStrictEqual(expected);
+      expect(array.filter(isNotNullish)).toStrictEqual(expected);
     });
 
-    it('returns only defined string values', () => {
+    it('returns only non-nullish string values', () => {
       const array = ['foo', null, 'bar', undefined, ''];
       const expected = ['foo', 'bar', ''];
-      expect(array.filter(isDefined)).toStrictEqual(expected);
+      expect(array.filter(isNotNullish)).toStrictEqual(expected);
     });
   });
 

@@ -3,7 +3,7 @@ import { DrumBeat } from 'types/DrumBeat';
 import { DrumType } from 'types/DrumType';
 import { Note } from 'types/Note';
 import { TrackType } from 'types/Track';
-import { isDefined } from 'utils/arrayUtils';
+import { isNotNullish } from 'utils/arrayUtils';
 import { getFrequencyFromMidiNote } from 'utils/frequencyUtils';
 import { SongsterrData } from './SongsterrData';
 
@@ -150,7 +150,7 @@ export function convertSongsterrDataToDrumBeats(
       }
       return { startTime, drum };
     })
-    .filter(isDefined);
+    .filter(isNotNullish);
 
   if (unknownDrumFrets.size > 0) {
     const unknownDrumFretsCounts = Array.from(unknownDrumFrets).map(
