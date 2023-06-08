@@ -36,6 +36,7 @@ function flattenSongsterrNotes(songsterrData: SongsterrData): Array<SongsterrNot
     let currentMeasureDuration = 0;
 
     let timeAtStartOfMeasure = 0;
+    let timeAtStartOfRepeat: number | undefined;
 
     songsterrData.measures.forEach((measure) => {
       let timeAtStartOfBeat = 0;
@@ -44,6 +45,10 @@ function flattenSongsterrNotes(songsterrData: SongsterrData): Array<SongsterrNot
         const [beatsPerMeasure, beatType] = measure.signature;
         currentWholeBeatsPerMeasure = beatsPerMeasure / beatType;
         currentMeasureDuration = currentWholeBeatsPerMeasure * currentWholeBeatDuration;
+      }
+
+      if (measure.repeatStart) {
+        timeAtStartOfRepeat = timeAtStartOfMeasure;
       }
 
       measure.voices[voice].beats.forEach((beat) => {
@@ -86,6 +91,23 @@ function flattenSongsterrNotes(songsterrData: SongsterrData): Array<SongsterrNot
       });
 
       timeAtStartOfMeasure += currentMeasureDuration;
+
+      if (measure.repeat !== undefined && measure.repeat > 1 && timeAtStartOfRepeat !== undefined) {
+        const repeatDuration = timeAtStartOfMeasure - timeAtStartOfRepeat;
+
+        const notesToRepeat = notes.filter(({ startTime }) => startTime >= timeAtStartOfRepeat!);
+        for (let repeatNumber = 1; repeatNumber < measure.repeat; repeatNumber += 1) {
+          notes.push(
+            ...notesToRepeat.map((note) => ({
+              ...note,
+              startTime: note.startTime + repeatDuration * repeatNumber,
+            })),
+          );
+          timeAtStartOfMeasure += repeatDuration;
+        }
+
+        timeAtStartOfRepeat = undefined;
+      }
     });
   }
 

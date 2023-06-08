@@ -60,6 +60,8 @@ export type SongsterrData = {
       text: string;
       width: number;
     };
+    repeatStart?: boolean;
+    repeat?: number;
   }>;
   capo: number;
   voices: number;
