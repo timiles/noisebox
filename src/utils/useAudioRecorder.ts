@@ -12,7 +12,8 @@ export default function useAudioRecorder(
     navigator.mediaDevices
       .getUserMedia({ audio: true, video: false })
       .then((stream: MediaStream) => {
-        const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        // Don't specify mime type, allow device to use whatever it supports
+        const recorder = new MediaRecorder(stream);
 
         // This will capture recorded data when recorder.stop() is called
         let recordedData: Blob | undefined;
