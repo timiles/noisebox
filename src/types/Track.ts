@@ -9,7 +9,6 @@ export enum TrackType {
 
 export type Track = {
   id: string;
-  name: string;
   instrument: string;
   type: TrackType;
   mute: boolean;

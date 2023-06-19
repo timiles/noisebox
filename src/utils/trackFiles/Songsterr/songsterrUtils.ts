@@ -9,11 +9,7 @@ import { SongsterrData } from './SongsterrData';
 
 export function isValidSongsterrData(json: Object): boolean {
   const songsterrData = json as SongsterrData;
-  return (
-    typeof songsterrData.name === 'string' &&
-    typeof songsterrData.voices === 'number' &&
-    Array.isArray(songsterrData.measures)
-  );
+  return typeof songsterrData.voices === 'number' && Array.isArray(songsterrData.measures);
 }
 
 export function getTrackType(songsterrData: SongsterrData): TrackType {

@@ -30,7 +30,7 @@ export default function TrackSettings(props: IProps) {
   return (
     <ControlContainer>
       <Typography component="h2" variant="h6" mb={1}>
-        {`${track.name} (${track.instrument})`}
+        {track.instrument}
       </Typography>
       <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
         {isDrumTrack(track) && (

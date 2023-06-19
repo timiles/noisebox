@@ -2,7 +2,7 @@ export type SongsterrData = {
   strings: number;
   frets: number;
   tuning?: Array<number>;
-  name: string;
+  name?: string;
   instrument: string;
   instrumentId: number;
   volume: number;

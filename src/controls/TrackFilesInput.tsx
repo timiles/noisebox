@@ -61,7 +61,6 @@ export default function TrackFilesInput(props: IProps) {
 
           const track: Track = {
             id: uuidv4(),
-            name: songsterrData.name,
             instrument: songsterrData.instrument,
             type: trackType,
             mute: false,

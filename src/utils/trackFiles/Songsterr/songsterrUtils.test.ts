@@ -5,19 +5,12 @@ import { convertSongsterrDataToNotes, isValidSongsterrData } from './songsterrUt
 describe('songsterrUtils', () => {
   describe('isValidSongsterrData', () => {
     const validSongsterrData: Partial<SongsterrData> = {
-      name: 'Test name',
       voices: 1,
       measures: [],
     };
 
     it('detects valid Songsterr data', () => {
       expect(isValidSongsterrData(validSongsterrData)).toBe(true);
-    });
-
-    it('requires name', () => {
-      const testSongsterrData = { ...validSongsterrData };
-      delete testSongsterrData.name;
-      expect(isValidSongsterrData(testSongsterrData)).toBe(false);
     });
 
     it('requires voices', () => {
@@ -39,7 +32,6 @@ describe('songsterrUtils', () => {
         strings: 6,
         frets: 24,
         tuning: [64, 59, 55, 50, 45, 40],
-        name: 'Test data',
         instrument: 'Test',
         instrumentId: 123,
         volume: 1,
@@ -119,7 +111,6 @@ describe('songsterrUtils', () => {
         strings: 6,
         frets: 24,
         tuning: [64, 59, 55, 50, 45, 40],
-        name: 'Test data',
         instrument: 'Test',
         instrumentId: 123,
         volume: 1,
@@ -326,7 +317,6 @@ describe('songsterrUtils', () => {
         strings: 6,
         frets: 24,
         tuning: [64, 59, 55, 50, 45, 40],
-        name: 'Test data 2',
         instrument: 'Test',
         instrumentId: 123,
         volume: 1,
