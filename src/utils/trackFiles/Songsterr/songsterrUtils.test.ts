@@ -116,7 +116,7 @@ describe('songsterrUtils', () => {
         volume: 1,
         balance: 0,
         measures: [
-          // Bar 1 normal
+          // Measure 1 normal
           {
             index: 1,
             signature: [1, 4],
@@ -133,7 +133,7 @@ describe('songsterrUtils', () => {
               },
             ],
           },
-          // Bar 2 repeats x3
+          // Measure 2 repeats x3
           {
             index: 2,
             voices: [
@@ -150,7 +150,7 @@ describe('songsterrUtils', () => {
             repeatStart: true,
             repeat: 3,
           },
-          // Bars 3-5 repeat x2
+          // Measures 3-5 repeat x2
           {
             index: 3,
             voices: [
@@ -195,7 +195,7 @@ describe('songsterrUtils', () => {
             ],
             repeat: 2,
           },
-          // Bar 6 rest, repeat x2
+          // Measure 6 rest, repeat x2
           {
             index: 6,
             voices: [
@@ -213,7 +213,7 @@ describe('songsterrUtils', () => {
             repeatStart: true,
             repeat: 2,
           },
-          // Bar 7 normal
+          // Measure 7 normal
           {
             index: 7,
             voices: [
@@ -241,71 +241,269 @@ describe('songsterrUtils', () => {
       };
 
       const expectedNotes: Array<Note> = [
-        // Bar 1
+        // Measure 1
         {
           startTime: 0,
           duration: 1,
           frequency: 349.2282314330039,
         },
-        // Bar 2 1st time
+        // Measure 2 1st time
         {
           startTime: 1,
           duration: 1,
           frequency: 369.99442271163446,
         },
-        // Bar 2 2nd time
+        // Measure 2 2nd time
         {
           startTime: 2,
           duration: 1,
           frequency: 369.99442271163446,
         },
-        // Bar 2 3rd time
+        // Measure 2 3rd time
         {
           startTime: 3,
           duration: 1,
           frequency: 369.99442271163446,
         },
-        // Bar 3 1st time
+        // Measure 3 1st time
         {
           startTime: 4,
           duration: 1,
           frequency: 391.99543598174927,
         },
-        // Bar 4 1st time
+        // Measure 4 1st time
         {
           startTime: 5,
           duration: 1,
           frequency: 415.3046975799451,
         },
-        // Bar 5 1st time
+        // Measure 5 1st time
         {
           startTime: 6,
           duration: 1,
           frequency: 440,
         },
-        // Bar 3 2nd time
+        // Measure 3 2nd time
         {
           startTime: 7,
           duration: 1,
           frequency: 391.99543598174927,
         },
-        // Bar 4 2nd time
+        // Measure 4 2nd time
         {
           startTime: 8,
           duration: 1,
           frequency: 415.3046975799451,
         },
-        // Bar 5 2nd time
+        // Measure 5 2nd time
         {
           startTime: 9,
           duration: 1,
           frequency: 440,
         },
-        // Bar 7 after 2 bars rest
+        // Measure 7 after 2 measures rest
         {
           startTime: 12,
           duration: 1,
           frequency: 493.8833012561241,
+        },
+      ];
+
+      expect(convertSongsterrDataToNotes(songsterrData)).toStrictEqual(expectedNotes);
+    });
+
+    it('handles repeat alternateEndings', () => {
+      const songsterrData: SongsterrData = {
+        strings: 6,
+        frets: 24,
+        tuning: [64, 59, 55, 50, 45, 40],
+        name: 'Test data',
+        instrument: 'Test',
+        instrumentId: 123,
+        volume: 1,
+        balance: 0,
+        measures: [
+          // Measure 1 normal
+          {
+            index: 1,
+            signature: [1, 4],
+            voices: [
+              {
+                beats: [
+                  {
+                    type: 4,
+                    notes: [{ string: 0, fret: 1 }],
+                    tempo: { type: 4, bpm: 60 },
+                    duration: [1, 4],
+                  },
+                ],
+              },
+            ],
+          },
+          // Measure 2: start of repeat
+          {
+            index: 2,
+            voices: [
+              {
+                beats: [
+                  {
+                    type: 4,
+                    notes: [{ string: 0, fret: 2 }],
+                    duration: [1, 4],
+                  },
+                ],
+              },
+            ],
+            repeatStart: true,
+          },
+          // Measure 3: 1st and 2nd ending
+          {
+            index: 3,
+            voices: [
+              {
+                beats: [
+                  {
+                    type: 4,
+                    notes: [{ string: 0, fret: 3 }],
+                    duration: [1, 4],
+                  },
+                ],
+              },
+            ],
+            alternateEnding: [1, 2],
+          },
+          // Measure 4: 3rd and 4th ending
+          {
+            index: 4,
+            voices: [
+              {
+                beats: [
+                  {
+                    type: 4,
+                    notes: [{ string: 0, fret: 4 }],
+                    duration: [1, 4],
+                  },
+                ],
+              },
+            ],
+            alternateEnding: [3, 4],
+          },
+          // Measure 5: 5th ending
+          {
+            index: 5,
+            voices: [
+              {
+                beats: [
+                  {
+                    type: 4,
+                    notes: [{ string: 0, fret: 5 }],
+                    duration: [1, 4],
+                  },
+                ],
+              },
+            ],
+            repeat: 5,
+            alternateEnding: [5],
+          },
+          // Measure 6: normal
+          {
+            index: 6,
+            voices: [
+              {
+                beats: [
+                  {
+                    type: 4,
+                    notes: [{ string: 0, fret: 6 }],
+                    duration: [1, 4],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        capo: 0,
+        voices: 1,
+        automations: {
+          tempo: [{ measure: 1, linear: false, visible: false, position: 0, type: 4, bpm: 60 }],
+        },
+        version: 5,
+        songId: 123,
+        partId: 1,
+        revisionId: 123,
+      };
+
+      const expectedNotes: Array<Note> = [
+        // Measure 1
+        {
+          startTime: 0,
+          duration: 1,
+          frequency: 349.2282314330039,
+        },
+        // Measure 2 1st time
+        {
+          startTime: 1,
+          duration: 1,
+          frequency: 369.99442271163446,
+        },
+        // Measure 3 1st time
+        {
+          startTime: 2,
+          duration: 1,
+          frequency: 391.99543598174927,
+        },
+        // Measure 2 2nd time
+        {
+          startTime: 3,
+          duration: 1,
+          frequency: 369.99442271163446,
+        },
+        // Measure 3 2nd time
+        {
+          startTime: 4,
+          duration: 1,
+          frequency: 391.99543598174927,
+        },
+        // Measure 2 3rd time
+        {
+          startTime: 5,
+          duration: 1,
+          frequency: 369.99442271163446,
+        },
+        // Measure 4 1st time
+        {
+          startTime: 6,
+          duration: 1,
+          frequency: 415.3046975799451,
+        },
+        // Measure 2 4th time
+        {
+          startTime: 7,
+          duration: 1,
+          frequency: 369.99442271163446,
+        },
+        // Measure 4 2nd time
+        {
+          startTime: 8,
+          duration: 1,
+          frequency: 415.3046975799451,
+        },
+        // Measure 2 5th time
+        {
+          startTime: 9,
+          duration: 1,
+          frequency: 369.99442271163446,
+        },
+        // Measure 5
+        {
+          startTime: 10,
+          duration: 1,
+          frequency: 440,
+        },
+        // Measure 6
+        {
+          startTime: 11,
+          duration: 1,
+          frequency: 466.1637615180899,
         },
       ];
 

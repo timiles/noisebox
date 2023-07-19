@@ -62,6 +62,7 @@ export type SongsterrData = {
     };
     repeatStart?: boolean;
     repeat?: number;
+    alternateEnding?: Array<number>;
   }>;
   capo: number;
   voices: number;

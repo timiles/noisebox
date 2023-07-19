@@ -31,3 +31,10 @@ export function getNextNumberedItem(itemName: string, currentNumberedItems: Arra
   const nextItemNumber = 1 + (getMaxItemNumber(itemName, currentNumberedItems) ?? 0);
   return `${itemName}${nextItemNumber}`;
 }
+
+/**
+ * Generates an array of numbers from 0 to `size` exclusive.
+ */
+export function range(size: number): ReadonlyArray<number> {
+  return new Array(size).fill(null).map((_, i) => i);
+}

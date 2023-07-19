@@ -3,7 +3,7 @@ import { DrumBeat } from 'types/DrumBeat';
 import { DrumType } from 'types/DrumType';
 import { Note } from 'types/Note';
 import { TrackType } from 'types/Track';
-import { isNotNullish } from 'utils/arrayUtils';
+import { isArrayNotEmpty, isNotNullish, range } from 'utils/arrayUtils';
 import { getFrequencyFromMidiNote } from 'utils/frequencyUtils';
 import { SongsterrData } from './SongsterrData';
 
@@ -16,96 +16,152 @@ export function getTrackType(songsterrData: SongsterrData): TrackType {
   return songsterrData.instrumentId === 1024 ? TrackType.Drum : TrackType.Instrument;
 }
 
-type SongsterrNote = {
+type Bar = {
+  timeSignature?: [number, number];
+  beats: ReadonlyArray<{
+    notes: ReadonlyArray<{ string: number; fret: number; isTiedOver: boolean }>;
+    duration: [number, number];
+    tempo?: { type: number; bpm: number };
+  }>;
+};
+
+// TODO: Consider a better name for this
+type AbsoluteNote = {
   string: number;
   fret: number;
   startTime: number;
   duration: number;
 };
 
-function flattenSongsterrNotes(songsterrData: SongsterrData): Array<SongsterrNote> {
-  const notes = new Array<SongsterrNote>();
+function convertSongsterrDataToBars(
+  songsterrData: SongsterrData,
+  voiceIndex: number,
+): ReadonlyArray<Bar> {
+  const bars = new Array<Bar>();
 
-  for (let voice = 0; voice < songsterrData.voices; voice += 1) {
-    let currentWholeBeatsPerMeasure = 0;
-    let currentWholeBeatDuration = 0;
-    let currentMeasureDuration = 0;
+  let barIndexAtStartOfRepeat: number | undefined;
+  let barIndexAtEndOfRepeat: number | undefined;
 
-    let timeAtStartOfMeasure = 0;
-    let timeAtStartOfRepeat: number | undefined;
-
-    songsterrData.measures.forEach((measure) => {
-      let timeAtStartOfBeat = 0;
-
-      if (measure.signature) {
-        const [beatsPerMeasure, beatType] = measure.signature;
-        currentWholeBeatsPerMeasure = beatsPerMeasure / beatType;
-        currentMeasureDuration = currentWholeBeatsPerMeasure * currentWholeBeatDuration;
-      }
-
-      if (measure.repeatStart) {
-        timeAtStartOfRepeat = timeAtStartOfMeasure;
-      }
-
-      measure.voices[voice].beats.forEach((beat) => {
-        if (beat.tempo) {
-          currentWholeBeatDuration = (60 * beat.tempo.type) / beat.tempo.bpm;
-          currentMeasureDuration = currentWholeBeatsPerMeasure * currentWholeBeatDuration;
-        }
-
-        if (!Number.isFinite(currentWholeBeatsPerMeasure) || currentWholeBeatsPerMeasure <= 0) {
-          throw new Error('Signature is not set.');
-        }
-        if (!Number.isFinite(currentWholeBeatDuration) || currentWholeBeatDuration <= 0) {
-          throw new Error('Tempo is not set.');
-        }
-
-        const [beatDuration, beatType] = beat.duration;
-        const duration = (currentWholeBeatDuration * beatDuration) / beatType;
-
-        if (!beat.rest) {
-          beat.notes.forEach((note) => {
-            if (note.string == null) {
+  songsterrData.measures.forEach((measure) => {
+    const bar: Bar = {
+      beats: measure.voices[voiceIndex].beats.map((beat) => ({
+        duration: beat.duration,
+        tempo: beat.tempo,
+        notes: beat.notes
+          .filter((songsterrNote) => !songsterrNote.rest)
+          .map(({ string, fret, tie }) => {
+            if (string == null) {
               throw new Error('string not set');
             }
-            if (note.fret == null) {
+            if (fret == null) {
               throw new Error('fret not set');
             }
 
-            if (note.tie) {
-              const previousNote = notes[notes.length - 1];
-              previousNote.duration += duration;
-            } else {
-              const { string, fret } = note;
-              const startTime = timeAtStartOfMeasure + timeAtStartOfBeat;
-              notes.push({ string, fret, startTime, duration });
-            }
-          });
+            return { string, fret, isTiedOver: Boolean(tie) };
+          }),
+      })),
+    };
+
+    if (measure.signature) {
+      bar.timeSignature = measure.signature;
+    }
+
+    if (measure.repeatStart) {
+      // Mark the start of repeated section
+      barIndexAtStartOfRepeat = bars.length;
+    }
+
+    if (
+      ((measure.repeat && measure.repeat > 1) || isArrayNotEmpty(measure.alternateEnding)) &&
+      barIndexAtStartOfRepeat !== undefined
+    ) {
+      if (isArrayNotEmpty(measure.alternateEnding)) {
+        if (barIndexAtEndOfRepeat === undefined) {
+          // Mark the end of repeated section
+          barIndexAtEndOfRepeat = bars.length;
         }
 
-        timeAtStartOfBeat += duration;
+        const barsToRepeat = bars.slice(barIndexAtStartOfRepeat, barIndexAtEndOfRepeat);
+        measure.alternateEnding.forEach((ending) => {
+          bars.push(bar);
+          if (ending !== measure.repeat) {
+            // If we have more endings to handle, push the repeat section again
+            bars.push(...barsToRepeat);
+          }
+        });
+
+        if (measure.repeat) {
+          // Repeats are finished, reset the markers
+          barIndexAtStartOfRepeat = undefined;
+          barIndexAtEndOfRepeat = undefined;
+        }
+      } else if (measure.repeat) {
+        bars.push(bar);
+
+        const barsToRepeat = bars.slice(barIndexAtStartOfRepeat);
+        for (let repeatNumber = 1; repeatNumber < measure.repeat; repeatNumber += 1) {
+          bars.push(...barsToRepeat);
+        }
+
+        barIndexAtStartOfRepeat = undefined;
+      }
+    } else {
+      bars.push(bar);
+    }
+  });
+
+  return bars;
+}
+
+function flattenBarsToNotes(bars: ReadonlyArray<Bar>): ReadonlyArray<AbsoluteNote> {
+  const notes = new Array<AbsoluteNote>();
+
+  let currentWholeBeatsPerMeasure = 0;
+  let currentWholeBeatDuration = 0;
+  let currentMeasureDuration = 0;
+
+  let timeAtStartOfMeasure = 0;
+
+  bars.forEach((bar) => {
+    let timeAtStartOfBeat = 0;
+
+    if (bar.timeSignature) {
+      const [beatsPerMeasure, beatType] = bar.timeSignature;
+      currentWholeBeatsPerMeasure = beatsPerMeasure / beatType;
+      currentMeasureDuration = currentWholeBeatsPerMeasure * currentWholeBeatDuration;
+    }
+
+    bar.beats.forEach((beat) => {
+      if (beat.tempo) {
+        currentWholeBeatDuration = (60 * beat.tempo.type) / beat.tempo.bpm;
+        currentMeasureDuration = currentWholeBeatsPerMeasure * currentWholeBeatDuration;
+      }
+
+      if (!Number.isFinite(currentWholeBeatsPerMeasure) || currentWholeBeatsPerMeasure <= 0) {
+        throw new Error('Signature is not set.');
+      }
+      if (!Number.isFinite(currentWholeBeatDuration) || currentWholeBeatDuration <= 0) {
+        throw new Error('Tempo is not set.');
+      }
+
+      const [beatDuration, beatType] = beat.duration;
+      const duration = (currentWholeBeatDuration * beatDuration) / beatType;
+
+      beat.notes.forEach(({ string, fret, isTiedOver: isTie }) => {
+        if (isTie) {
+          const previousNote = notes[notes.length - 1];
+          previousNote.duration += duration;
+        } else {
+          const startTime = timeAtStartOfMeasure + timeAtStartOfBeat;
+          notes.push({ string, fret, startTime, duration });
+        }
       });
 
-      timeAtStartOfMeasure += currentMeasureDuration;
-
-      if (measure.repeat !== undefined && measure.repeat > 1 && timeAtStartOfRepeat !== undefined) {
-        const repeatDuration = timeAtStartOfMeasure - timeAtStartOfRepeat;
-
-        const notesToRepeat = notes.filter(({ startTime }) => startTime >= timeAtStartOfRepeat!);
-        for (let repeatNumber = 1; repeatNumber < measure.repeat; repeatNumber += 1) {
-          notes.push(
-            ...notesToRepeat.map((note) => ({
-              ...note,
-              startTime: note.startTime + repeatDuration * repeatNumber,
-            })),
-          );
-          timeAtStartOfMeasure += repeatDuration;
-        }
-
-        timeAtStartOfRepeat = undefined;
-      }
+      timeAtStartOfBeat += duration;
     });
-  }
+
+    timeAtStartOfMeasure += currentMeasureDuration;
+  });
 
   return notes;
 }
@@ -137,7 +193,10 @@ export function convertSongsterrDataToDrumBeats(
 ): Array<DrumBeat> {
   const unknownDrumFrets = new Map<number, number>();
 
-  const drumBeats = flattenSongsterrNotes(songsterrData)
+  const drumBeats = range(songsterrData.voices)
+    .map((voiceIndex) => convertSongsterrDataToBars(songsterrData, voiceIndex))
+    .flatMap(flattenBarsToNotes)
+    .sort((a, b) => a.startTime - b.startTime)
     .map(({ fret, startTime }) => {
       const drum = fretsToDrumsMap.get(fret);
       if (drum === undefined) {
@@ -163,9 +222,13 @@ export function convertSongsterrDataToNotes(songsterrData: SongsterrData): Array
     throw new Error('Tuning data is required.');
   }
 
-  return flattenSongsterrNotes(songsterrData).map(({ string, fret, startTime, duration }) => {
-    const stringNote = songsterrData.tuning![string];
-    const frequency = getFrequencyFromMidiNote(stringNote + fret);
-    return { startTime, frequency, duration };
-  });
+  return range(songsterrData.voices)
+    .map((voiceIndex) => convertSongsterrDataToBars(songsterrData, voiceIndex))
+    .flatMap(flattenBarsToNotes)
+    .sort((a, b) => a.startTime - b.startTime)
+    .map(({ string, fret, startTime, duration }) => {
+      const stringNote = songsterrData.tuning![string];
+      const frequency = getFrequencyFromMidiNote(stringNote + fret);
+      return { startTime, frequency, duration };
+    });
 }

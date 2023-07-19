@@ -1,4 +1,4 @@
-import { distinct, getMaxItemNumber, isArrayNotEmpty, isNotNullish } from './arrayUtils';
+import { distinct, getMaxItemNumber, isArrayNotEmpty, isNotNullish, range } from './arrayUtils';
 
 describe('arrayUtils', () => {
   describe('distinct', () => {
@@ -65,6 +65,12 @@ describe('arrayUtils', () => {
     it('returns null if no numeric suffixes', () => {
       const array = ['test1x', 'test20x', 'test3x'];
       expect(getMaxItemNumber('test', array)).toBeNull();
+    });
+  });
+
+  describe('range', () => {
+    it('returns range as expected', () => {
+      expect(range(5)).toStrictEqual([0, 1, 2, 3, 4]);
     });
   });
 });
