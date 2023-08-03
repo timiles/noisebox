@@ -25,11 +25,9 @@ type Bar = {
   }>;
 };
 
-// TODO: Consider a better name for this
-type AbsoluteNote = {
-  string: number;
-  fret: number;
+type MidiNote = {
   startTime: number;
+  noteNumber: number;
   duration: number;
 };
 
@@ -113,8 +111,11 @@ function convertSongsterrDataToBars(
   return bars;
 }
 
-function flattenBarsToNotes(bars: ReadonlyArray<Bar>): ReadonlyArray<AbsoluteNote> {
-  const notes = new Array<AbsoluteNote>();
+function flattenBarsToNotes(
+  bars: ReadonlyArray<Bar>,
+  tuning?: ReadonlyArray<number>,
+): ReadonlyArray<MidiNote> {
+  const notes = new Array<MidiNote>();
 
   let currentWholeBeatsPerMeasure = 0;
   let currentWholeBeatDuration = 0;
@@ -152,8 +153,10 @@ function flattenBarsToNotes(bars: ReadonlyArray<Bar>): ReadonlyArray<AbsoluteNot
           const previousNote = notes[notes.length - 1];
           previousNote.duration += duration;
         } else {
+          const stringNote = tuning?.[string] ?? 0;
+          const noteNumber = stringNote + fret;
           const startTime = timeAtStartOfMeasure + timeAtStartOfBeat;
-          notes.push({ string, fret, startTime, duration });
+          notes.push({ noteNumber, startTime, duration });
         }
       });
 
@@ -166,7 +169,7 @@ function flattenBarsToNotes(bars: ReadonlyArray<Bar>): ReadonlyArray<AbsoluteNot
   return notes;
 }
 
-const fretsToDrumsMap = new Map<number, DrumType>([
+const midiNoteDrumMap = new Map<number, DrumType>([
   [33, DrumType.Snare],
   [35, DrumType.Bass2],
   [36, DrumType.Bass1],
@@ -191,27 +194,27 @@ export function convertSongsterrDataToDrumBeats(
   songsterrData: SongsterrData,
   logger: ILogger,
 ): Array<DrumBeat> {
-  const unknownDrumFrets = new Map<number, number>();
+  const unknownDrumMidiNotes = new Map<number, number>();
 
   const drumBeats = range(songsterrData.voices)
     .map((voiceIndex) => convertSongsterrDataToBars(songsterrData, voiceIndex))
-    .flatMap(flattenBarsToNotes)
+    .flatMap((bars) => flattenBarsToNotes(bars))
     .sort((a, b) => a.startTime - b.startTime)
-    .map(({ fret, startTime }) => {
-      const drum = fretsToDrumsMap.get(fret);
+    .map(({ noteNumber, startTime }) => {
+      const drum = midiNoteDrumMap.get(noteNumber);
       if (drum === undefined) {
-        unknownDrumFrets.set(fret, (unknownDrumFrets.get(fret) ?? 0) + 1);
+        unknownDrumMidiNotes.set(noteNumber, (unknownDrumMidiNotes.get(noteNumber) ?? 0) + 1);
         return null;
       }
       return { startTime, drum };
     })
     .filter(isNotNullish);
 
-  if (unknownDrumFrets.size > 0) {
-    const unknownDrumFretsCounts = Array.from(unknownDrumFrets).map(
-      ([fret, count]) => `${fret} (x${count})`,
+  if (unknownDrumMidiNotes.size > 0) {
+    const unknownDrumMidiNotesCounts = Array.from(unknownDrumMidiNotes).map(
+      ([midiNote, count]) => `${midiNote} (x${count})`,
     );
-    logger.log('warning', `Unknown drum frets: ${unknownDrumFretsCounts.join(', ')}.`);
+    logger.log('warning', `Unknown drum midi notes: ${unknownDrumMidiNotesCounts.join(', ')}.`);
   }
 
   return drumBeats;
@@ -224,11 +227,10 @@ export function convertSongsterrDataToNotes(songsterrData: SongsterrData): Array
 
   return range(songsterrData.voices)
     .map((voiceIndex) => convertSongsterrDataToBars(songsterrData, voiceIndex))
-    .flatMap(flattenBarsToNotes)
+    .flatMap((bars) => flattenBarsToNotes(bars, songsterrData.tuning!))
     .sort((a, b) => a.startTime - b.startTime)
-    .map(({ string, fret, startTime, duration }) => {
-      const stringNote = songsterrData.tuning![string];
-      const frequency = getFrequencyFromMidiNote(stringNote + fret);
+    .map(({ noteNumber, startTime, duration }) => {
+      const frequency = getFrequencyFromMidiNote(noteNumber);
       return { startTime, frequency, duration };
     });
 }
