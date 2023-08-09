@@ -1,7 +1,6 @@
 import { ILogger } from 'LoggerProvider';
-import { Track } from 'types/Track';
+import { Track, TrackType } from 'types/Track';
 import { isArrayNotEmpty } from 'utils/arrayUtils';
-import { isDrumTrack, isInstrumentTrack } from 'utils/trackUtils';
 import DrumPlayer from './DrumPlayer';
 import SamplePlayer from './SamplePlayer';
 
@@ -79,17 +78,17 @@ export default class MultiTrackPlayer {
   setTracks(tracks: Array<Track>) {
     this.tracks = tracks.filter(
       (track) =>
-        (isDrumTrack(track) && track.drumKitId !== undefined) ||
-        (isInstrumentTrack(track) && track.sample !== undefined),
+        (track.type === TrackType.Drum && track.drumKitId !== undefined) ||
+        (track.type === TrackType.Instrument && track.sample !== undefined),
     );
 
     this.tracks.forEach((track) => {
-      if (isDrumTrack(track)) {
+      if (track.type === TrackType.Drum) {
         const { drumKitId } = track;
         if (drumKitId) {
           this.drumPlayer.loadDrumKit(drumKitId);
         }
-      } else if (isInstrumentTrack(track)) {
+      } else if (track.type === TrackType.Instrument) {
         const { notes, sample } = track;
         if (sample) {
           this.samplePlayer.prepareSampleForNotes(sample, notes);
@@ -120,7 +119,7 @@ export default class MultiTrackPlayer {
         return;
       }
 
-      if (isDrumTrack(track)) {
+      if (track.type === TrackType.Drum) {
         const { drumBeats, drumKitId } = track;
         if (drumKitId) {
           drumBeats
@@ -133,7 +132,7 @@ export default class MultiTrackPlayer {
               );
             });
         }
-      } else if (isInstrumentTrack(track)) {
+      } else if (track.type === TrackType.Instrument) {
         const { notes, sample } = track;
         if (sample) {
           notes

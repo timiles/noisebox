@@ -7,19 +7,21 @@ export enum TrackType {
   Instrument,
 }
 
-export type Track = {
+type BaseTrack<T extends TrackType> = {
+  type: T;
   id: string;
   instrument: string;
-  type: TrackType;
-  mute: boolean;
+  mute?: boolean;
 };
 
-export type DrumTrack = Track & {
+type DrumTrack = BaseTrack<TrackType.Drum> & {
   drumBeats: Array<DrumBeat>;
   drumKitId?: number;
 };
 
-export type InstrumentTrack = Track & {
+type InstrumentTrack = BaseTrack<TrackType.Instrument> & {
   notes: Array<Note>;
   sample?: Sample;
 };
+
+export type Track = DrumTrack | InstrumentTrack;

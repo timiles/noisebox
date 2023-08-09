@@ -1,8 +1,7 @@
 import { Checkbox, FormControlLabel, Stack, Typography } from '@mui/material';
 import ControlContainer from 'components/ControlContainer';
 import { Sample } from 'types/Sample';
-import { Track } from 'types/Track';
-import { isDrumTrack, isInstrumentTrack } from 'utils/trackUtils';
+import { Track, TrackType } from 'types/Track';
 import SelectDrumKitControl from './SelectDrumKitControl';
 import SelectSampleControl from './SelectSampleControl';
 
@@ -33,10 +32,10 @@ export default function TrackSettings(props: IProps) {
         {track.instrument}
       </Typography>
       <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-        {isDrumTrack(track) && (
+        {track.type === TrackType.Drum && (
           <SelectDrumKitControl id={track.id} onChange={handleChangeDrumKit} />
         )}
-        {isInstrumentTrack(track) && (
+        {track.type === TrackType.Instrument && (
           <SelectSampleControl id={track.id} samples={samples} onChange={handleChangeSample} />
         )}
         <FormControlLabel control={<Checkbox />} label="Mute" onChange={handleChangeMute} />

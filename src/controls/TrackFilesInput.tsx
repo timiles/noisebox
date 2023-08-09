@@ -13,7 +13,7 @@ import { useLogger } from 'LoggerProvider';
 import ExternalLink from 'components/ExternalLink';
 import { enqueueSnackbar } from 'notistack';
 import { ChangeEvent, useState } from 'react';
-import { DrumTrack, InstrumentTrack, Track, TrackType } from 'types/Track';
+import { Track, TrackType } from 'types/Track';
 import { SongsterrData } from 'utils/trackFiles/Songsterr/SongsterrData';
 import {
   convertSongsterrDataToDrumBeats,
@@ -59,23 +59,19 @@ export default function TrackFilesInput(props: IProps) {
           const songsterrData = JSON.parse(text) as SongsterrData;
           const trackType = getTrackType(songsterrData);
 
-          const track: Track = {
-            id: uuidv4(),
-            instrument: songsterrData.instrument,
-            type: trackType,
-            mute: false,
-          };
+          const { instrument } = songsterrData;
+
+          let track: Track;
 
           switch (trackType) {
             case TrackType.Drum: {
-              (track as DrumTrack).drumBeats = convertSongsterrDataToDrumBeats(
-                songsterrData,
-                logger,
-              );
+              const drumBeats = convertSongsterrDataToDrumBeats(songsterrData, logger);
+              track = { type: TrackType.Drum, id: uuidv4(), instrument, drumBeats };
               break;
             }
             case TrackType.Instrument: {
-              (track as InstrumentTrack).notes = convertSongsterrDataToNotes(songsterrData);
+              const notes = convertSongsterrDataToNotes(songsterrData);
+              track = { type: TrackType.Instrument, id: uuidv4(), instrument, notes };
               break;
             }
             default: {
