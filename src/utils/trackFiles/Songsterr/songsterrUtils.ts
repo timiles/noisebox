@@ -1,6 +1,7 @@
 import { ILogger } from 'LoggerProvider';
+import { DRUM_MIDI_NOTES } from 'data/DRUM_MIDI_NOTES';
 import { DrumBeat } from 'types/DrumBeat';
-import { DrumType } from 'types/DrumType';
+import { MidiNote } from 'types/MidiNote';
 import { Note } from 'types/Note';
 import { TrackType } from 'types/Track';
 import { isArrayNotEmpty, isNotNullish, range } from 'utils/arrayUtils';
@@ -23,12 +24,6 @@ type Bar = {
     duration: [number, number];
     tempo?: { type: number; bpm: number };
   }>;
-};
-
-type MidiNote = {
-  startTime: number;
-  noteNumber: number;
-  duration: number;
 };
 
 function convertSongsterrDataToBars(
@@ -169,27 +164,6 @@ function flattenBarsToNotes(
   return notes;
 }
 
-const midiNoteDrumMap = new Map<number, DrumType>([
-  [33, DrumType.Snare],
-  [35, DrumType.Bass2],
-  [36, DrumType.Bass1],
-  [38, DrumType.Snare],
-  [40, DrumType.Snare],
-  [41, DrumType.FloorTom1],
-  [42, DrumType.ClosedHiHat],
-  [43, DrumType.FloorTom2],
-  [44, DrumType.FootHiHat],
-  [45, DrumType.FloorTom1],
-  [46, DrumType.OpenHiHat],
-  [47, DrumType.Tom3],
-  [48, DrumType.Tom2],
-  [49, DrumType.Crash],
-  [50, DrumType.Tom1],
-  [55, DrumType.Crash],
-  [57, DrumType.Crash],
-  [92, DrumType.LooseHiHat],
-]);
-
 export function convertSongsterrDataToDrumBeats(
   songsterrData: SongsterrData,
   logger: ILogger,
@@ -201,7 +175,7 @@ export function convertSongsterrDataToDrumBeats(
     .flatMap((bars) => flattenBarsToNotes(bars))
     .sort((a, b) => a.startTime - b.startTime)
     .map(({ noteNumber, startTime }) => {
-      const drum = midiNoteDrumMap.get(noteNumber);
+      const drum = DRUM_MIDI_NOTES.get(noteNumber);
       if (drum === undefined) {
         unknownDrumMidiNotes.set(noteNumber, (unknownDrumMidiNotes.get(noteNumber) ?? 0) + 1);
         return null;

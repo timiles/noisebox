@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { useLogger } from 'LoggerProvider';
 import ExternalLink from 'components/ExternalLink';
+import { parseMidi } from 'midi-file';
 import { enqueueSnackbar } from 'notistack';
 import { ChangeEvent, useState } from 'react';
 import { Track, TrackType } from 'types/Track';
@@ -21,6 +22,7 @@ import {
   getTrackType,
   isValidSongsterrData,
 } from 'utils/trackFiles/Songsterr/songsterrUtils';
+import { convertMidiDataToTracks } from 'utils/trackFiles/midi/midiUtils';
 import { v4 as uuidv4 } from 'uuid';
 
 interface IProps {
@@ -42,46 +44,65 @@ export default function TrackFilesInput(props: IProps) {
     if (files) {
       for (let i = 0; i < files.length; i += 1) {
         const file = files[i];
-        file.text().then((text) => {
-          let json;
-          try {
-            json = JSON.parse(text);
+        const fileExtension = file.name.split('.').at(-1);
+        switch (fileExtension) {
+          case 'json': {
+            file.text().then((text) => {
+              let json;
+              try {
+                json = JSON.parse(text);
 
-            if (!isValidSongsterrData(json)) {
-              throw new Error('Invalid Songsterr data.');
-            }
-          } catch (error) {
-            logger.log('error', `Could not read "${file.name}". ${error}`);
-            enqueueSnackbar({ message: `Could not read "${file.name}".`, variant: 'error' });
-            return;
+                if (!isValidSongsterrData(json)) {
+                  throw new Error('Invalid Songsterr data.');
+                }
+              } catch (error) {
+                logger.log('error', `Could not read "${file.name}". ${error}`);
+                enqueueSnackbar(`Could not read "${file.name}".`, { variant: 'error' });
+                return;
+              }
+
+              const songsterrData = JSON.parse(text) as SongsterrData;
+              const trackType = getTrackType(songsterrData);
+
+              const { instrument } = songsterrData;
+
+              let track: Track;
+
+              switch (trackType) {
+                case TrackType.Drum: {
+                  const drumBeats = convertSongsterrDataToDrumBeats(songsterrData, logger);
+                  track = { type: TrackType.Drum, id: uuidv4(), instrument, drumBeats };
+                  break;
+                }
+                case TrackType.Instrument: {
+                  const notes = convertSongsterrDataToNotes(songsterrData);
+                  track = { type: TrackType.Instrument, id: uuidv4(), instrument, notes };
+                  break;
+                }
+                default: {
+                  const exhaustiveCheck: never = trackType;
+                  throw new Error(`Unknown TrackType: ${trackType}.`);
+                }
+              }
+
+              onTrackAdded(track);
+            });
+            break;
           }
-
-          const songsterrData = JSON.parse(text) as SongsterrData;
-          const trackType = getTrackType(songsterrData);
-
-          const { instrument } = songsterrData;
-
-          let track: Track;
-
-          switch (trackType) {
-            case TrackType.Drum: {
-              const drumBeats = convertSongsterrDataToDrumBeats(songsterrData, logger);
-              track = { type: TrackType.Drum, id: uuidv4(), instrument, drumBeats };
-              break;
-            }
-            case TrackType.Instrument: {
-              const notes = convertSongsterrDataToNotes(songsterrData);
-              track = { type: TrackType.Instrument, id: uuidv4(), instrument, notes };
-              break;
-            }
-            default: {
-              const exhaustiveCheck: never = trackType;
-              throw new Error(`Unknown TrackType: ${trackType}.`);
-            }
+          case 'mid': {
+            file.arrayBuffer().then((arrayBuffer) => {
+              const midiData = parseMidi(new Uint8Array(arrayBuffer));
+              const tracks = convertMidiDataToTracks(midiData, logger);
+              tracks.forEach(onTrackAdded);
+            });
+            break;
           }
-
-          onTrackAdded(track);
-        });
+          default: {
+            const message = `Unexpected file extension: "${fileExtension}".`;
+            logger.log('error', message);
+            enqueueSnackbar(message, { variant: 'error' });
+          }
+        }
       }
     }
   };
@@ -92,7 +113,7 @@ export default function TrackFilesInput(props: IProps) {
         Import track files
         <input
           type="file"
-          accept=".json"
+          accept=".json,.mid"
           aria-describedby="track-files-input-helper-text"
           hidden
           multiple
@@ -114,7 +135,7 @@ export default function TrackFilesInput(props: IProps) {
         <DialogTitle id="track-files-dialog-title">Supported track files</DialogTitle>
         <DialogContent>
           <DialogContentText id="track-files-dialog-description" tabIndex={-1}>
-            Noisebox can currently read tabs from{' '}
+            Noisebox can read MIDI files, and tabs in json format from{' '}
             <ExternalLink href="https://www.songsterr.com/">Songsterr.com</ExternalLink>.
             <br />
             Please{' '}
