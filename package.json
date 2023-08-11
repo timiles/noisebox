@@ -32,7 +32,9 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build-app": "react-scripts build",
+    "build-workers": "node buildWorkerBundle.js",
+    "build": "npm run build-workers && npm run build-app",
     "lint": "eslint --ext .ts,.tsx ./src",
     "lint:fix": "npm run lint -- --fix",
     "test": "react-scripts test",
@@ -71,6 +73,9 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "next-standard-version": "^3.0.16",
     "prettier": "^2.8.8",
-    "prettier-eslint": "^15.0.1"
+    "prettier-eslint": "^15.0.1",
+    "ts-loader": "^9.4.4",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4"
   }
 }

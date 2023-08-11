@@ -3,14 +3,10 @@ import { useAudioContext } from 'AudioContextProvider';
 import { useLogger } from 'LoggerProvider';
 import { enqueueSnackbar } from 'notistack';
 import { useEffect } from 'react';
-import {
-  calculateFrequency,
-  getMidiNoteFromFrequency,
-  getPitchFromMidiNote,
-} from 'utils/frequencyUtils';
+import { getMidiNoteFromFrequency, getPitchFromMidiNote } from 'utils/frequencyUtils';
 import { playFrequency } from 'utils/playUtils';
 import { getChannelDataArrays } from 'utils/sampleUtils';
-import WorkerPool from 'workerpool';
+import { getWorkerPool } from 'workers/getWorkerPool';
 
 function FrequencyValue(props: { frequency: undefined | null | number }) {
   const { frequency } = props;
@@ -50,9 +46,9 @@ export default function FrequencyControl(props: IProps) {
     if (frequency === undefined) {
       const channelDataArrays = getChannelDataArrays(audioBuffer);
 
-      const pool = WorkerPool.pool();
+      const pool = getWorkerPool();
       pool
-        .exec(calculateFrequency, [channelDataArrays, audioBuffer.sampleRate])
+        .calculateFrequency(channelDataArrays, audioBuffer.sampleRate)
         .then((nextFrequency) => {
           onChangeFrequency(nextFrequency);
         })
