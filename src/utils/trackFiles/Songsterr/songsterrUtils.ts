@@ -166,7 +166,7 @@ function flattenBarsToNotes(
 
 export function convertSongsterrDataToDrumBeats(
   songsterrData: SongsterrData,
-  logger: ILogger,
+  logger?: ILogger,
 ): Array<DrumBeat> {
   const unknownDrumMidiNotes = new Map<number, number>();
 
@@ -188,7 +188,7 @@ export function convertSongsterrDataToDrumBeats(
     const unknownDrumMidiNotesCounts = Array.from(unknownDrumMidiNotes).map(
       ([midiNote, count]) => `${midiNote} (x${count})`,
     );
-    logger.log('warning', `Unknown drum midi notes: ${unknownDrumMidiNotesCounts.join(', ')}.`);
+    logger?.log('warning', `Unknown drum midi notes: ${unknownDrumMidiNotesCounts.join(', ')}.`);
   }
 
   return drumBeats;

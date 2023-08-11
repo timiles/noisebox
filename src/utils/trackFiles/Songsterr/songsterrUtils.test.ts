@@ -1,6 +1,12 @@
+import { DrumBeat } from 'types/DrumBeat';
+import { DrumType } from 'types/DrumType';
 import { Note } from 'types/Note';
 import { SongsterrData } from './SongsterrData';
-import { convertSongsterrDataToNotes, isValidSongsterrData } from './songsterrUtils';
+import {
+  convertSongsterrDataToDrumBeats,
+  convertSongsterrDataToNotes,
+  isValidSongsterrData,
+} from './songsterrUtils';
 
 describe('songsterrUtils', () => {
   describe('isValidSongsterrData', () => {
@@ -23,6 +29,82 @@ describe('songsterrUtils', () => {
       const testSongsterrData = { ...validSongsterrData };
       delete testSongsterrData.measures;
       expect(isValidSongsterrData(testSongsterrData)).toBe(false);
+    });
+  });
+
+  describe('convertSongsterrDataToDrumBeats', () => {
+    it('converts measures as expected', () => {
+      const songsterrData: SongsterrData = {
+        strings: 6,
+        frets: 87,
+        instrument: 'Drums',
+        instrumentId: 1024,
+        volume: 1,
+        balance: 0,
+        measures: [
+          {
+            index: 1,
+            signature: [4, 4],
+            voices: [
+              {
+                beats: [
+                  {
+                    type: 4,
+                    rest: true,
+                    notes: [{ rest: true }],
+                    tempo: { type: 4, bpm: 120 },
+                    duration: [1, 4],
+                  },
+                  { type: 16, notes: [{ string: 0, fret: 36 }], duration: [1, 16] },
+                  { type: 16, rest: true, notes: [{ rest: true }], duration: [3, 16] },
+                  { type: 16, notes: [{ string: 5, fret: 35 }], duration: [1, 16] },
+                  { type: 16, rest: true, notes: [{ rest: true }], duration: [3, 16] },
+                  { type: 16, notes: [{ string: 0, fret: 38 }], duration: [1, 16] },
+                  { type: 16, rest: true, notes: [{ rest: true }], duration: [3, 16] },
+                ],
+              },
+            ],
+          },
+          {
+            index: 2,
+            voices: [
+              {
+                beats: [
+                  { type: 16, notes: [{ string: 0, fret: 41 }], duration: [1, 16] },
+                  { type: 16, rest: true, notes: [{ rest: true }], duration: [3, 16] },
+                  { type: 16, notes: [{ string: 0, fret: 43 }], duration: [1, 16] },
+                  { type: 16, rest: true, notes: [{ rest: true }], duration: [3, 16] },
+                  { type: 16, notes: [{ string: 5, fret: 49 }], duration: [1, 16] },
+                  { type: 16, rest: true, notes: [{ rest: true }], duration: [3, 16] },
+                  { type: 16, notes: [{ string: 0, fret: 46 }], duration: [1, 16] },
+                  { type: 16, rest: true, notes: [{ rest: true }], duration: [3, 16] },
+                ],
+              },
+            ],
+          },
+        ],
+        capo: 0,
+        voices: 1,
+        automations: {
+          tempo: [{ measure: 1, linear: false, visible: false, position: 0, type: 4, bpm: 120 }],
+        },
+        version: 5,
+        songId: 123,
+        partId: 1,
+        revisionId: 123,
+      };
+
+      const expectedDrumBeats: Array<DrumBeat> = [
+        { startTime: 0.5, drum: DrumType.Bass1 },
+        { startTime: 1, drum: DrumType.Bass2 },
+        { startTime: 1.5, drum: DrumType.Snare },
+        { startTime: 2, drum: DrumType.FloorTom1 },
+        { startTime: 2.5, drum: DrumType.FloorTom2 },
+        { startTime: 3, drum: DrumType.Crash },
+        { startTime: 3.5, drum: DrumType.OpenHiHat },
+      ];
+
+      expect(convertSongsterrDataToDrumBeats(songsterrData)).toStrictEqual(expectedDrumBeats);
     });
   });
 
