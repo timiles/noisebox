@@ -68,8 +68,15 @@ export default function App() {
       const nextTracks = prevTracks.slice();
       const index = nextTracks.findIndex(({ id }) => id === nextTrack.id);
       nextTracks[index] = nextTrack;
-      multiTrackPlayer.setTracks(nextTracks);
       return nextTracks;
+    });
+    multiTrackPlayer.setTrack(nextTrack).then(() => {
+      setTracks((prevTracks) => {
+        const nextTracks = prevTracks.slice();
+        const index = nextTracks.findIndex(({ id }) => id === nextTrack.id);
+        nextTracks[index].isLoading = false;
+        return nextTracks;
+      });
     });
   };
 

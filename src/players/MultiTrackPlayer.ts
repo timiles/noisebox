@@ -1,6 +1,5 @@
 import { ILogger } from 'LoggerProvider';
 import { Track, TrackType } from 'types/Track';
-import { isArrayNotEmpty } from 'utils/arrayUtils';
 import DrumPlayer from './DrumPlayer';
 import SamplePlayer from './SamplePlayer';
 
@@ -43,7 +42,7 @@ export default class MultiTrackPlayer {
   /**
    * All the playable tracks, ie each has a drum kit or sample selected.
    */
-  private tracks: Array<Track> | undefined;
+  private tracks: Map<string, Track>;
 
   /**
    * `timeoutId` of the next execution of `scheduleNext()`
@@ -55,7 +54,9 @@ export default class MultiTrackPlayer {
     private logger: ILogger,
     private drumPlayer: DrumPlayer,
     private samplePlayer: SamplePlayer,
-  ) {}
+  ) {
+    this.tracks = new Map<string, Track>();
+  }
 
   onChangePlayMode: ((playMode: PlayMode) => void) | undefined;
 
@@ -75,36 +76,42 @@ export default class MultiTrackPlayer {
     }
   }
 
-  setTracks(tracks: Array<Track>) {
-    this.tracks = tracks.filter(
-      (track) =>
-        (track.type === TrackType.Drum && track.drumKitId !== undefined) ||
-        (track.type === TrackType.Instrument && track.sample !== undefined),
-    );
+  setTrack(track: Track): Promise<void> {
+    return new Promise((resolve) => {
+      if (
+        (track.type === TrackType.Drum && track.drumKitId === undefined) ||
+        (track.type === TrackType.Instrument && track.sample === undefined)
+      ) {
+        this.tracks.delete(track.id);
+        resolve();
+        return;
+      }
 
-    this.tracks.forEach((track) => {
+      this.tracks.set(track.id, track);
+
       if (track.type === TrackType.Drum) {
         const { drumKitId } = track;
         if (drumKitId) {
           this.drumPlayer.loadDrumKit(drumKitId);
+          resolve();
         }
       } else if (track.type === TrackType.Instrument) {
         const { notes, sample } = track;
         if (sample) {
-          this.samplePlayer.prepareSampleForNotes(sample, notes);
+          this.samplePlayer.prepareSampleForNotes(sample, notes).then(resolve);
         }
       }
-    });
 
-    if (this.playMode === PlayMode.NoTracksLoaded && isArrayNotEmpty(this.tracks)) {
-      this.setPlayMode(PlayMode.Stopped);
-    }
+      if (this.playMode === PlayMode.NoTracksLoaded && this.tracks.size > 0) {
+        this.setPlayMode(PlayMode.Stopped);
+      }
+    });
   }
 
   private scheduleNext() {
     const scheduleNextStarted = this.audioContext.currentTime;
 
-    if (!isArrayNotEmpty(this.tracks)) {
+    if (this.tracks.size === 0) {
       // Throw error as this shouldn't be possible.
       throw new Error('No tracks to play.');
     }
@@ -166,7 +173,7 @@ export default class MultiTrackPlayer {
   }
 
   play() {
-    if (!isArrayNotEmpty(this.tracks)) {
+    if (this.tracks.size === 0) {
       throw new Error('No tracks can be played.');
     }
 

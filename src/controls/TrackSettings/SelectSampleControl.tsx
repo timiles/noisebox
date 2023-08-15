@@ -1,4 +1,6 @@
 import {
+  Box,
+  CircularProgress,
   FormControl,
   InputLabel,
   MenuItem,
@@ -13,10 +15,11 @@ interface IProps {
   id: string;
   samples: Array<Sample>;
   onChange: (sample: Sample) => void;
+  isLoading: boolean;
 }
 
 export default function SelectSampleControl(props: IProps) {
-  const { id, samples, onChange } = props;
+  const { id, samples, onChange, isLoading } = props;
 
   const [selectedSampleId, setSelectedSampleId] = useState<string>('');
 
@@ -45,7 +48,12 @@ export default function SelectSampleControl(props: IProps) {
       >
         {samples.map((sample) => (
           <MenuItem key={sample.id} value={sample.id}>
-            {sample.name}
+            <Box display="flex" alignItems="center">
+              {sample.name}
+              {isLoading && sample.id === selectedSampleId && (
+                <CircularProgress size="1rem" sx={{ marginLeft: 1 }} />
+              )}
+            </Box>
           </MenuItem>
         ))}
       </Select>

@@ -11,6 +11,7 @@ type BaseTrack<T extends TrackType> = {
   type: T;
   id: string;
   instrument: string;
+  isLoading?: boolean;
   mute?: boolean;
 };
 

@@ -1,5 +1,6 @@
 /* eslint-disable import/prefer-default-export */
 import { calculateFrequency } from 'utils/frequencyUtils';
+import { stretchAudioBuffer } from 'utils/sampleUtils';
 import WorkerPool from 'workerpool';
 
 type WorkerPoolFunction<T extends (...args: any) => any> = (
@@ -8,6 +9,7 @@ type WorkerPoolFunction<T extends (...args: any) => any> = (
 
 interface MyWorkerPool extends WorkerPool.WorkerPool {
   calculateFrequency: WorkerPoolFunction<typeof calculateFrequency>;
+  stretchAudioBuffer: WorkerPoolFunction<typeof stretchAudioBuffer>;
 }
 
 /**
@@ -17,5 +19,6 @@ interface MyWorkerPool extends WorkerPool.WorkerPool {
 export function getWorkerPool(): MyWorkerPool {
   const pool = WorkerPool.pool('./worker.bundle.js') as MyWorkerPool;
   pool.calculateFrequency = (...args) => pool.exec(calculateFrequency.name, args);
+  pool.stretchAudioBuffer = (...args) => pool.exec(stretchAudioBuffer.name, args);
   return pool;
 }

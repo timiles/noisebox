@@ -19,7 +19,7 @@ export default function TrackSettings(props: IProps) {
   };
 
   const handleChangeSample = (nextSample: Sample) => {
-    onChange({ ...track, sample: nextSample } as Track);
+    onChange({ ...track, sample: nextSample, isLoading: true } as Track);
   };
 
   const handleChangeMute = (e: React.SyntheticEvent, checked: boolean) => {
@@ -36,7 +36,12 @@ export default function TrackSettings(props: IProps) {
           <SelectDrumKitControl id={track.id} onChange={handleChangeDrumKit} />
         )}
         {track.type === TrackType.Instrument && (
-          <SelectSampleControl id={track.id} samples={samples} onChange={handleChangeSample} />
+          <SelectSampleControl
+            id={track.id}
+            samples={samples}
+            onChange={handleChangeSample}
+            isLoading={Boolean(track.isLoading)}
+          />
         )}
         <FormControlLabel control={<Checkbox />} label="Mute" onChange={handleChangeMute} />
       </Stack>

@@ -1,9 +1,10 @@
 import Kali from '@descript/kali';
 import { AudioSource } from 'types/AudioSource';
 import { Sample } from 'types/Sample';
+import { range } from './arrayUtils';
 
 export function getChannelDataArrays(audioBuffer: AudioBuffer): Array<Float32Array> {
-  return [...Array(audioBuffer.numberOfChannels)].map((_, i) => audioBuffer.getChannelData(i));
+  return range(audioBuffer.numberOfChannels).map((i) => audioBuffer.getChannelData(i));
 }
 
 type Clip = { start: number; length: number };
@@ -194,28 +195,15 @@ function stretchChannelData(
 }
 
 export function stretchAudioBuffer(
-  inputAudioBuffer: AudioBuffer,
+  channelDataArrays: ReadonlyArray<Float32Array>,
+  sampleRate: number,
   stretchFactor: number,
-): AudioBuffer {
+): ReadonlyArray<Float32Array> {
   if (stretchFactor === 1) {
-    return inputAudioBuffer;
+    return channelDataArrays;
   }
 
-  const { numberOfChannels, sampleRate } = inputAudioBuffer;
-
-  const stretchedChannelDataArrays = getChannelDataArrays(inputAudioBuffer).map((channelData) =>
+  return channelDataArrays.map((channelData) =>
     stretchChannelData(channelData, sampleRate, stretchFactor),
   );
-
-  const stretchedAudioBuffer = new AudioBuffer({
-    length: Math.max(...stretchedChannelDataArrays.map((data) => data.length)),
-    numberOfChannels,
-    sampleRate,
-  });
-
-  stretchedChannelDataArrays.forEach((channelData, channel) => {
-    stretchedAudioBuffer.getChannelData(channel).set(channelData);
-  });
-
-  return stretchedAudioBuffer;
 }
