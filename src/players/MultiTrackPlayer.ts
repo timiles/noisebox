@@ -89,16 +89,25 @@ export default class MultiTrackPlayer {
 
       this.tracks.set(track.id, track);
 
-      if (track.type === TrackType.Drum) {
-        const { drumKitId } = track;
-        if (drumKitId) {
-          this.drumPlayer.loadDrumKit(drumKitId);
-          resolve();
+      switch (track.type) {
+        case TrackType.Drum: {
+          const { drumKitId } = track;
+          if (drumKitId) {
+            this.drumPlayer.loadDrumKit(this.audioContext, drumKitId);
+            resolve();
+          }
+          break;
         }
-      } else if (track.type === TrackType.Instrument) {
-        const { notes, sample } = track;
-        if (sample) {
-          this.samplePlayer.prepareSampleForNotes(sample, notes).then(resolve);
+        case TrackType.Instrument: {
+          const { notes, sample } = track;
+          if (sample) {
+            this.samplePlayer.prepareSampleForNotes(sample, notes).then(resolve);
+          }
+          break;
+        }
+        default: {
+          const exhaustiveCheck: never = track;
+          throw new Error(`Unknown TrackType.`);
         }
       }
 
@@ -126,32 +135,43 @@ export default class MultiTrackPlayer {
         return;
       }
 
-      if (track.type === TrackType.Drum) {
-        const { drumBeats, drumKitId } = track;
-        if (drumKitId) {
-          drumBeats
-            .filter(({ startTime }) => startTime >= this.scheduleTrackTime && startTime < endTime)
-            .forEach((drumBeat) => {
-              this.drumPlayer.play(
-                drumKitId,
-                drumBeat.drum,
-                this.playStartTime + drumBeat.startTime,
-              );
-            });
+      switch (track.type) {
+        case TrackType.Drum: {
+          const { drumBeats, drumKitId } = track;
+          if (drumKitId) {
+            drumBeats
+              .filter(({ startTime }) => startTime >= this.scheduleTrackTime && startTime < endTime)
+              .forEach((drumBeat) => {
+                this.drumPlayer.play(
+                  this.audioContext,
+                  drumKitId,
+                  drumBeat.drum,
+                  this.playStartTime + drumBeat.startTime,
+                );
+              });
+          }
+          break;
         }
-      } else if (track.type === TrackType.Instrument) {
-        const { notes, sample } = track;
-        if (sample) {
-          notes
-            .filter(({ startTime }) => startTime >= this.scheduleTrackTime && startTime < endTime)
-            .forEach((note) => {
-              this.samplePlayer.play(
-                sample.id,
-                note.frequency,
-                note.duration,
-                this.playStartTime + note.startTime,
-              );
-            });
+        case TrackType.Instrument: {
+          const { notes, sample } = track;
+          if (sample) {
+            notes
+              .filter(({ startTime }) => startTime >= this.scheduleTrackTime && startTime < endTime)
+              .forEach((note) => {
+                this.samplePlayer.play(
+                  this.audioContext,
+                  sample.id,
+                  note.frequency,
+                  note.duration,
+                  this.playStartTime + note.startTime,
+                );
+              });
+          }
+          break;
+        }
+        default: {
+          const exhaustiveCheck: never = track;
+          throw new Error(`Unknown TrackType.`);
         }
       }
     });
@@ -203,5 +223,80 @@ export default class MultiTrackPlayer {
     // Also reset track time and scheduler
     this.setTrackTime(0);
     this.scheduleTrackTime = 0;
+  }
+
+  renderToAudioBuffer(): Promise<AudioBuffer> {
+    return new Promise<AudioBuffer>((resolve, reject) => {
+      const playableTracks = Array.from(this.tracks)
+        .map(([, track]) => track)
+        .filter((track) => !track.mute);
+
+      if (playableTracks.length === 0) {
+        reject(new Error('No tracks can be played.'));
+        return;
+      }
+
+      const maxTrackLength = Math.max(
+        ...playableTracks.flatMap((track) =>
+          track.type === TrackType.Instrument
+            ? track.notes.map((note) => note.startTime + note.duration)
+            : // For performance, assume that max drum beat sample duration is 2 seconds
+              track.drumBeats.map((drumBeat) => drumBeat.startTime + 2),
+        ),
+      );
+
+      const offlineAudioContext = new OfflineAudioContext({
+        numberOfChannels: 2,
+        length: this.audioContext.sampleRate * maxTrackLength,
+        sampleRate: this.audioContext.sampleRate,
+      });
+
+      playableTracks.forEach((track) => {
+        switch (track.type) {
+          case TrackType.Drum: {
+            const { drumBeats, drumKitId } = track;
+            if (drumKitId) {
+              drumBeats.forEach((drumBeat) => {
+                this.drumPlayer.play(
+                  offlineAudioContext,
+                  drumKitId,
+                  drumBeat.drum,
+                  drumBeat.startTime,
+                );
+              });
+            }
+            break;
+          }
+          case TrackType.Instrument: {
+            const { notes, sample } = track;
+            if (sample) {
+              notes.forEach((note) => {
+                this.samplePlayer.play(
+                  offlineAudioContext,
+                  sample.id,
+                  note.frequency,
+                  note.duration,
+                  note.startTime,
+                );
+              });
+            }
+            break;
+          }
+          default: {
+            const exhaustiveCheck: never = track;
+            throw new Error(`Unknown TrackType.`);
+          }
+        }
+      });
+
+      offlineAudioContext
+        .startRendering()
+        .then((renderedBuffer) => {
+          resolve(renderedBuffer);
+        })
+        .catch((error) => {
+          reject(new Error(`Rendering failed: ${error}`));
+        });
+    });
   }
 }

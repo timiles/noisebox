@@ -20,7 +20,7 @@ export default class SamplePlayer {
    */
   private stretchedSamples = new Map<string, StretchedSample>();
 
-  constructor(private audioContext: AudioContext, private logger: ILogger) {}
+  constructor(private logger: ILogger) {}
 
   private getOrCreateStretchedSample(sample: Sample): StretchedSample {
     let stretchedSample = this.stretchedSamples.get(sample.id);
@@ -99,7 +99,13 @@ export default class SamplePlayer {
     });
   }
 
-  play(sampleId: string, frequency: number, duration: number, startTime: number) {
+  play(
+    audioContext: BaseAudioContext,
+    sampleId: string,
+    frequency: number,
+    duration: number,
+    startTime: number,
+  ) {
     const stretchedSample = this.stretchedSamples.get(sampleId);
 
     if (!stretchedSample) {
@@ -118,11 +124,9 @@ export default class SamplePlayer {
       return;
     }
 
-    const bufferSource = new AudioBufferSourceNode(this.audioContext, {
-      buffer,
-      playbackRate: frequency / stretchedSample.originalFrequency,
-    });
-    bufferSource.connect(this.audioContext.destination);
+    const playbackRate = frequency / stretchedSample.originalFrequency;
+    const bufferSource = new AudioBufferSourceNode(audioContext, { buffer, playbackRate });
+    bufferSource.connect(audioContext.destination);
     bufferSource.start(startTime);
   }
 }

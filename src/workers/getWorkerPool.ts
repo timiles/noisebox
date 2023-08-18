@@ -1,15 +1,25 @@
 /* eslint-disable import/prefer-default-export */
-import { calculateFrequency } from 'utils/frequencyUtils';
-import { stretchAudioBuffer } from 'utils/sampleUtils';
 import WorkerPool from 'workerpool';
 
 type WorkerPoolFunction<T extends (...args: any) => any> = (
   ...args: Parameters<T>
 ) => WorkerPool.Promise<ReturnType<T>>;
 
+// NOTE: Don't reference the functions directly, otherwise they'll be included in the app build
 interface MyWorkerPool extends WorkerPool.WorkerPool {
-  calculateFrequency: WorkerPoolFunction<typeof calculateFrequency>;
-  stretchAudioBuffer: WorkerPoolFunction<typeof stretchAudioBuffer>;
+  calculateFrequency: WorkerPoolFunction<
+    (channelDataArrays: Array<Float32Array>, sampleRate: number) => number
+  >;
+  encodeBufferToWav: WorkerPoolFunction<
+    (channelDataArrays: ReadonlyArray<Float32Array>, sampleRate: number) => Blob
+  >;
+  stretchAudioBuffer: WorkerPoolFunction<
+    (
+      channelDataArrays: ReadonlyArray<Float32Array>,
+      sampleRate: number,
+      stretchFactor: number,
+    ) => ReadonlyArray<Float32Array>
+  >;
 }
 
 /**
@@ -18,7 +28,8 @@ interface MyWorkerPool extends WorkerPool.WorkerPool {
  */
 export function getWorkerPool(): MyWorkerPool {
   const pool = WorkerPool.pool('./worker.bundle.js') as MyWorkerPool;
-  pool.calculateFrequency = (...args) => pool.exec(calculateFrequency.name, args);
-  pool.stretchAudioBuffer = (...args) => pool.exec(stretchAudioBuffer.name, args);
+  pool.calculateFrequency = (...args) => pool.exec('calculateFrequency', args);
+  pool.encodeBufferToWav = (...args) => pool.exec('encodeBufferToWav', args);
+  pool.stretchAudioBuffer = (...args) => pool.exec('stretchAudioBuffer', args);
   return pool;
 }

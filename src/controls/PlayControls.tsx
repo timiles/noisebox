@@ -3,6 +3,7 @@ import ControlContainer from 'components/ControlContainer';
 import MultiTrackPlayer, { PlayMode } from 'players/MultiTrackPlayer';
 import { useState } from 'react';
 import { toMinutesAndSeconds } from 'utils/timeUtils';
+import DownloadButton from './DownloadButton';
 
 interface IProps {
   multiTrackPlayer: MultiTrackPlayer;
@@ -41,6 +42,7 @@ export default function PlayControls(props: IProps) {
         <Button variant="contained" onClick={() => multiTrackPlayer.stop()} disabled={!canStop}>
           Stop
         </Button>
+        <DownloadButton multiTrackPlayer={multiTrackPlayer} />
       </Stack>
     </ControlContainer>
   );

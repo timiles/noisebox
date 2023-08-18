@@ -30,12 +30,7 @@ export default function App() {
   const logger = useLogger();
 
   const [multiTrackPlayer] = useState(
-    new MultiTrackPlayer(
-      audioContext,
-      logger,
-      new DrumPlayer(audioContext, logger),
-      new SamplePlayer(audioContext, logger),
-    ),
+    new MultiTrackPlayer(audioContext, logger, new DrumPlayer(logger), new SamplePlayer(logger)),
   );
 
   const handleChangeView = (nextView: View) => {

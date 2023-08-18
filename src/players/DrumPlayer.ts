@@ -10,7 +10,7 @@ export default class DrumPlayer {
    */
   private drumKitBuffers = new Map<number, Map<DrumType, AudioBuffer>>();
 
-  constructor(private audioContext: AudioContext, private logger: ILogger) {}
+  constructor(private logger: ILogger) {}
 
   private handleDrumKitLoaded(drumKit: DrumKit, audioBuffer: AudioBuffer) {
     const { id, name, samples } = drumKit;
@@ -41,7 +41,7 @@ export default class DrumPlayer {
     });
   }
 
-  loadDrumKit(drumKitId: number) {
+  loadDrumKit(audioContext: BaseAudioContext, drumKitId: number) {
     if (!this.drumKitBuffers.has(drumKitId)) {
       const drumKit = DRUM_KITS.find(({ id }) => id === drumKitId)!;
 
@@ -49,7 +49,7 @@ export default class DrumPlayer {
         (response) => {
           response
             .arrayBuffer()
-            .then((arrayBuffer) => this.audioContext.decodeAudioData(arrayBuffer))
+            .then((arrayBuffer) => audioContext.decodeAudioData(arrayBuffer))
             .then((decodedAudioData) => this.handleDrumKitLoaded(drumKit, decodedAudioData))
             .catch((reason) => {
               // Handle error from processing data
@@ -75,7 +75,7 @@ export default class DrumPlayer {
     }
   }
 
-  play(drumKitId: number, drum: DrumType, scheduleTime: number) {
+  play(audioContext: BaseAudioContext, drumKitId: number, drum: DrumType, scheduleTime: number) {
     const drumBuffers = this.drumKitBuffers.get(drumKitId);
     if (!drumBuffers) {
       return;
@@ -87,8 +87,8 @@ export default class DrumPlayer {
       return;
     }
 
-    const bufferSource = new AudioBufferSourceNode(this.audioContext, { buffer: drumBuffer });
-    bufferSource.connect(this.audioContext.destination);
+    const bufferSource = new AudioBufferSourceNode(audioContext, { buffer: drumBuffer });
+    bufferSource.connect(audioContext.destination);
     bufferSource.start(scheduleTime);
   }
 }

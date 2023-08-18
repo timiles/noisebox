@@ -1,4 +1,4 @@
-import { toMinutesAndSeconds } from './timeUtils';
+import { toFilenameFriendlyString, toMinutesAndSeconds } from './timeUtils';
 
 describe('timeUtils', () => {
   describe('toMinutesAndSeconds', () => {
@@ -12,6 +12,18 @@ describe('timeUtils', () => {
       expect(toMinutesAndSeconds(600)).toBe('10:00');
       expect(toMinutesAndSeconds(3600)).toBe('60:00');
       expect(toMinutesAndSeconds(36012)).toBe('600:12');
+    });
+  });
+
+  describe('toFilenameFriendlyString', () => {
+    it('handles single digit values', () => {
+      const date = new Date(2023, 7, 6, 5, 4, 3);
+      expect(toFilenameFriendlyString(date)).toBe('2023-08-06 05.04.03');
+    });
+
+    it('handles double digit values', () => {
+      const date = new Date(2023, 11, 12, 13, 14, 15);
+      expect(toFilenameFriendlyString(date)).toBe('2023-12-12 13.14.15');
     });
   });
 });
