@@ -10,6 +10,9 @@ interface MyWorkerPool extends WorkerPool.WorkerPool {
   calculateFrequency: WorkerPoolFunction<
     (channelDataArrays: Array<Float32Array>, sampleRate: number) => number
   >;
+  encodeBufferToMp3: WorkerPoolFunction<
+    (channelDataArrays: ReadonlyArray<Float32Array>, sampleRate: number, bitRate: number) => Blob
+  >;
   encodeBufferToWav: WorkerPoolFunction<
     (channelDataArrays: ReadonlyArray<Float32Array>, sampleRate: number) => Blob
   >;
@@ -29,6 +32,7 @@ interface MyWorkerPool extends WorkerPool.WorkerPool {
 export function getWorkerPool(): MyWorkerPool {
   const pool = WorkerPool.pool('./worker.bundle.js') as MyWorkerPool;
   pool.calculateFrequency = (...args) => pool.exec('calculateFrequency', args);
+  pool.encodeBufferToMp3 = (...args) => pool.exec('encodeBufferToMp3', args);
   pool.encodeBufferToWav = (...args) => pool.exec('encodeBufferToWav', args);
   pool.stretchAudioBuffer = (...args) => pool.exec('stretchAudioBuffer', args);
   return pool;
