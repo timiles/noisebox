@@ -31,17 +31,19 @@ export default function PlayControls(props: IProps) {
 
   return (
     <ControlContainer>
-      <Stack direction="row" alignItems="center" spacing={2}>
-        <Chip label={toMinutesAndSeconds(trackTime)} variant="outlined" />
-        <Button variant="contained" onClick={() => multiTrackPlayer.play()} disabled={!canPlay}>
-          Play
-        </Button>
-        <Button variant="contained" onClick={() => multiTrackPlayer.pause()} disabled={!canPause}>
-          Pause
-        </Button>
-        <Button variant="contained" onClick={() => multiTrackPlayer.stop()} disabled={!canStop}>
-          Stop
-        </Button>
+      <Stack direction={{ xs: 'column', sm: 'row' }} alignItems="center" spacing={2}>
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <Chip label={toMinutesAndSeconds(trackTime)} variant="outlined" />
+          <Button variant="contained" onClick={() => multiTrackPlayer.play()} disabled={!canPlay}>
+            Play
+          </Button>
+          <Button variant="contained" onClick={() => multiTrackPlayer.pause()} disabled={!canPause}>
+            Pause
+          </Button>
+          <Button variant="contained" onClick={() => multiTrackPlayer.stop()} disabled={!canStop}>
+            Stop
+          </Button>
+        </Stack>
         <DownloadButton multiTrackPlayer={multiTrackPlayer} />
       </Stack>
     </ControlContainer>
