@@ -98,8 +98,10 @@ export default function TrackFilesInput(props: IProps) {
             break;
           }
           default: {
-            const message = `Unexpected file extension: "${fileExtension}".`;
-            logger.log('error', message);
+            logger.log('error', `Invalid track file: "${file.name}".`);
+
+            const message =
+              'Invalid track file. Noisebox can read .mid files, and .json files from Songsterr.';
             enqueueSnackbar(message, { variant: 'error' });
           }
         }
@@ -113,7 +115,6 @@ export default function TrackFilesInput(props: IProps) {
         Import track files
         <input
           type="file"
-          accept=".json,.mid"
           aria-describedby="track-files-input-helper-text"
           hidden
           multiple
